@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Community Hub by Prinz Sherman. Connect, share, and play with people around the world.">
+    <title>Community Hub | Global Feed</title>
+    
+    <!-- Canonical and Social Meta -->
+    <link rel="canonical" href="https://prinzsherman.web.app/community.html">
+    <meta property="og:title" content="Community Hub | Prinz Sherman">
+    <meta property="og:description" content="Connect, share, and play with people around the world in the Prinz Sherman community hub.">
+    <meta property="og:url" content="https://prinzsherman.web.app/community.html">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://prinzsherman.web.app/assets/images/my-photo.jpeg">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <!-- AI Assistant Scripts -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1500.0.min.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <link rel="icon" type="image/jpg" href="assets/images/prinzo.jpg">
+    <link rel="apple-touch-icon" href="assets/images/prinzo.jpg">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0d6efd">
+
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --accent: #3b82f6;
+        }
+        body {
+            background-color: var(--bg-deep);
+            color: #f8fafc; /* Crisp white */
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+        p {
+            color: #f8fafc;
+            opacity: 1 !important;
+        }
+        .text-muted {
+            color: #cbd5e1 !important; /* Brighter Slate */
+        }
+        h1, h2, h3, .navbar-brand { font-family: 'Lexend', sans-serif; }
+        
+        .hub-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            overflow: hidden;
+            transition: 0.3s;
+        }
+        .hub-card:hover { border-color: var(--accent); }
+        
+        .post-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: 0.3s;
+        }
+        .post-card:hover { border-color: rgba(59, 130, 246, 0.3); }
+        
+        .video-box { aspect-ratio: 16/9; background: #000; border-radius: 16px; overflow: hidden; position: relative; }
+        .video-box video { width: 100%; height: 100%; object-fit: cover; }
+        
+        .badge-lvl { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; font-weight: 800; border-radius: 50px; }
+        
+        .create-post-input {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc !important;
+            border-radius: 15px;
+            padding: 15px;
+            resize: none;
+        }
+        .create-post-input:focus {
+            background: rgba(15, 23, 42, 1);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            color: #ffffff !important;
+        }
+
+        .hr-text {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+        }
+        .hr-text::before, .hr-text::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .hr-text:not(:empty)::before { margin-right: .5em; }
+        .hr-text:not(:empty)::after { margin-left: .5em; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-guard" class="min-vh-100 d-flex align-items-center justify-content-center p-4">
+        <div class="hub-card p-5 text-center shadow-lg" style="max-width: 450px; backdrop-filter: blur(20px);">
+            <img src="assets/images/prinzo.jpg" alt="Prinz Sherman Profile Avatar" class="rounded-circle shadow mb-4" width="100" height="100">
+            <h2 class="fw-bold mb-3">Community Hub</h2>
+            <p class="mb-4 opacity-75">Sign in to explore the feed and start playing.</p>
+            
+            <button class="btn btn-primary btn-lg rounded-pill px-5 fw-bold w-100 mb-2" onclick="window.handleLogin()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" class="me-2"> Google Sign In
+            </button>
+
+            <button class="btn btn-outline-light btn-lg rounded-pill px-5 fw-bold w-100 mb-3" onclick="window.handleAnonymousLogin()">
+                <i class="fas fa-user-secret me-2"></i> Sign In Anonymously
+            </button>
+
+            <div class="hr-text my-4 opacity-50"><span>OR</span></div>
+
+            <div id="phone-login-step1">
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-dark border-secondary text-white">+</span>
+                    <input type="text" id="phone-number" class="form-control bg-dark text-white border-secondary" placeholder="1234567890">
+                </div>
+                <button class="btn btn-outline-primary btn-lg rounded-pill px-5 fw-bold w-100" id="send-otp-btn" onclick="window.handlePhoneLogin()">
+                    <i class="fas fa-phone me-2"></i> Sign In with Phone
+                </button>
+            </div>
+
+            <div id="phone-login-step2" class="d-none">
+                <input type="text" id="otp-code" class="form-control bg-dark text-white border-secondary mb-3 text-center fs-4" placeholder="Enter OTP" style="letter-spacing: 10px;">
+                <button class="btn btn-success btn-lg rounded-pill px-5 fw-bold w-100" onclick="window.verifyOTP()">
+                    Verify OTP
+                </button>
+            </div>
+
+            <div id="recaptcha-container" class="mt-3"></div>
+
+            <p class="mt-4 small opacity-50">By signing in, you agree to our <a href="privacy-policy.html" class="text-white text-decoration-underline">Privacy Policy</a>.</p>
+        </div>
+    </div>
+
+    <div id="main-content" class="d-none">
+        <nav class="navbar navbar-expand-lg navbar-dark sticky-top border-bottom border-secondary">
+            <div class="container">
+                <a class="navbar-brand fw-bold" href="index.html">PS<span class="text-primary">.</span>HUB</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#hubNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="hubNav">
+                    <ul class="navbar-nav ms-auto align-items-center gap-2">
+                        <li class="nav-item"><span id="online-count" class="badge bg-success rounded-pill px-3">0 Online</span></li>
+                        <li class="nav-item"><a class="nav-link" href="index.html">Portfolio</a></li>
+                        <li class="nav-item"><a class="nav-link" href="profile.html">My Profile</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                                <img id="nav-user-img" src="" class="rounded-circle me-2" width="25" height="25">
+                                <span id="nav-user-name">User</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end bg-dark border-secondary">
+                                <li><a class="dropdown-item text-white" href="#" onclick="window.handleLogout()">Sign Out</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container py-5">
+            <div class="row g-4">
+                <!-- Left Sidebar -->
+                <div class="col-lg-4">
+                    <div class="hub-card p-4 mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <img id="profile-img" src="" class="rounded-circle border border-primary p-1" width="60" height="60">
+                            <div class="ms-3">
+                                <h6 id="user-display-name" class="fw-bold mb-0">Guest User</h6>
+                                <span class="badge-lvl px-2 small">LVL <span id="user-level">1</span></span>
+                            </div>
+                        </div>
+                        <div class="progress bg-dark" style="height: 6px;">
+                            <div id="xp-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="hub-card p-4 mb-4">
+                        <h5 class="fw-bold mb-4 text-primary"><i class="fas fa-gamepad me-2"></i> Battle Arena</h5>
+                        <div class="d-grid gap-3">
+                            <a href="projects/ludo.html" class="btn btn-outline-light text-start p-3 rounded-4 d-flex align-items-center">
+                                <i class="fas fa-dice-five fa-2x text-danger me-3"></i>
+                                <div><b class="d-block">Ludo Multiverse</b><small class="opacity-50">Video Chat</small></div>
+                            </a>
+                            <a href="projects/checkers.html" class="btn btn-outline-light text-start p-3 rounded-4 d-flex align-items-center">
+                                <i class="fas fa-chess fa-2x text-warning me-3"></i>
+                                <div><b class="d-block">World Checkers</b><small class="opacity-50">Online Play</small></div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="hub-card p-4 text-center">
+                        <h5 class="fw-bold mb-3">Live Connections</h5>
+                        <div id="video-area" class="d-none">
+                            <div class="video-box mb-3"><video id="localVideo" autoplay muted playsinline></video></div>
+                            <div class="video-box mb-3"><video id="remoteVideo" autoplay playsinline></video></div>
+                            <span id="call-status" class="badge bg-warning text-dark mb-3">Searching...</span>
+                            <div id="webrtc-debug" class="bg-black text-success p-2 small text-start mb-3 rounded" style="font-family: monospace; max-height: 100px; overflow-y: auto; display: none;"></div>
+                        </div>
+                        <button id="startCallBtn" class="btn btn-danger rounded-pill w-100 fw-bold" onclick="window.toggleRandomCall()">
+                            <i class="fas fa-video me-2"></i> Random Video Call
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main Feed -->
+                <div class="col-lg-8">
+                    <!-- Create Post Box -->
+                    <div class="hub-card p-4 mb-4">
+                        <div class="d-flex gap-3">
+                            <img id="post-author-img" src="" class="rounded-circle" width="50" height="50">
+                            <div class="flex-grow-1">
+                                <textarea id="hub-post-content" class="form-control create-post-input w-100 mb-3" rows="2" placeholder="Share something with the community..."></textarea>
+                                <div class="text-end">
+                                    <button class="btn btn-primary rounded-pill px-4 fw-bold" onclick="window.createHubPost()">Post to Feed</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Global Feed -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold mb-0">Community Feed</h4>
+                        <span class="text-muted small">Latest Updates</span>
+                    </div>
+                    <div id="global-feed">
+                        <div class="text-center py-5 opacity-50"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="py-4 border-top border-secondary mt-5">
+            <div class="container text-center">
+                <p class="small text-muted mb-0">
+                    &copy; 2026 Prinz Sherman. 
+                    <a href="privacy-policy.html" class="text-muted ms-3">Privacy Policy</a>
+                    <a href="delete.html" class="text-muted ms-3">Data Deletion</a>
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- AI Assistant UI -->
+    <div id="ai-assistant-btn" onclick="toggleChat()">
+        <i class="fas fa-robot"></i>
+    </div>
+
+    <div id="ai-chat-window">
+        <div class="chat-header" style="height: 150px; position: relative; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); overflow: hidden;">
+            <!-- Cartoon AI Avatar -->
+            <img id="ai-avatar" src="/assets/images/alexa-robot.png" 
+                 style="width: 120px; height: 120px; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); object-fit: contain; z-index: 5;">
+            <div style="position: relative; z-index: 10; margin-top: 10px; margin-left: 15px;">
+                <h6 class="mb-0 fw-bold text-white" style="text-shadow: 0 2px 10px rgba(0,0,0,0.8);">Alexa (AI Assistant)</h6>
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-success" style="text-shadow: 0 1px 5px rgba(0,0,0,0.5);">● Online</small>
+                    <select id="chat-lang" class="bg-dark border-0 text-white-50 small rounded-pill px-2" style="outline:none; cursor:pointer; font-size: 0.75rem;" onchange="updateChatLanguage()">
+                        <option value="en">English</option>
+                        <option value="fr">French</option>
+                        <option value="es">Spanish</option>
+                        <option value="ar">Arabic</option>
+                        <option value="zh">Chinese</option>
+                        <option value="de">German</option>
+                        <option value="it">Italian</option>
+                        <option value="ja">Japanese</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="ru">Russian</option>
+                        <option value="hi">Hindi</option>
+                        <option value="ro">Romanian</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-sm text-white ms-auto" style="position: absolute; top: 10px; right: 10px; z-index: 11; background: rgba(0,0,0,0.3); border-radius: 50%;" onclick="toggleChat()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="message ai-msg">Hi! I'm your AI assistant. How can I help you?</div>
+        </div>
+        <div class="chat-footer">
+            <input type="file" id="ocr-upload" accept="image/*" style="display:none" onchange="handleOCRUpload(event)">
+            <button class="btn btn-outline-info btn-circle me-1" onclick="document.getElementById('ocr-upload').click()" title="Scan & Translate Text">
+                <i class="fas fa-camera"></i>
+            </button>
+            <button class="btn btn-outline-primary btn-circle" onclick="startVoiceRecognition()" id="mic-btn">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <input type="text" class="chat-input" id="chat-input" placeholder="Ask me something..." onkeypress="handleChatKey(event)">
+            <button class="btn btn-primary btn-circle" onclick="sendChatMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="assets/js/presence.js"></script>
+    <script src="/assets/js/aws-ai.js"></script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set, remove, get, push, update, onChildAdded, onDisconnect, limitToLast, query, orderByChild } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, RecaptchaVerifier, signInWithPhoneNumber, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyC7lbpbRN86mWeQ6Wwj1d8saGtY9IU6yTk", authDomain: "prinz-08ee97cc.firebaseapp.com", databaseURL: "https://prinz-08ee97cc-default-rtdb.firebaseio.com", projectId: "prinz-08ee97cc", storageBucket: "prinz-08ee97cc.firebasestorage.app", messagingSenderId: "431949566856", appId: "1:431949566856:web:47f131b012c3055c6ae03d" };
+        const app = initializeApp(firebaseConfig); 
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        let currentUser = null;
+        let confirmationResult = null;
+
+        class XPManager {
+            constructor() { this.xp = 0; this.level = 1; }
+            async sync(user) {
+                const snap = await get(ref(db, `users/${user.uid}/xp`));
+                this.xp = snap.exists() ? snap.val() : 0;
+                this.level = Math.floor(this.xp / 100) + 1;
+                document.getElementById('user-level').innerText = this.level;
+                document.getElementById('xp-bar').style.width = (this.xp % 100) + '%';
+            }
+            async addXP(amount) {
+                if (!currentUser) return;
+                this.xp += amount;
+                await set(ref(db, `users/${currentUser.uid}/xp`), this.xp);
+                this.sync(currentUser);
+            }
+        }
+        const xpManager = new XPManager();
+
+        onAuthStateChanged(auth, async (user) => {
+            const authGuard = document.getElementById('auth-guard');
+            const mainContent = document.getElementById('main-content');
+            if (user) {
+                currentUser = user;
+                authGuard.classList.add('d-none');
+                mainContent.classList.remove('d-none');
+                
+                const userRef = ref(db, `users/${user.uid}`);
+                const snap = await get(userRef);
+                const defaultName = user.phoneNumber || "Guest " + user.uid.slice(0, 5);
+                const defaultPhoto = "assets/images/prinzo.jpg";
+
+                if (!snap.exists()) {
+                    await set(userRef, { 
+                        name: user.displayName || defaultName, 
+                        photoURL: user.photoURL || defaultPhoto, 
+                        xp: 0, 
+                        bio: "" 
+                    });
+                } else {
+                    const updates = {};
+                    if (user.displayName) updates.name = user.displayName;
+                    if (user.photoURL) updates.photoURL = user.photoURL;
+                    if (Object.keys(updates).length > 0) await update(userRef, updates);
+                }
+
+                const userData = (await get(userRef)).val();
+                document.getElementById('user-display-name').innerText = userData.name;
+                document.getElementById('nav-user-name').innerText = userData.name.split(' ')[0];
+                document.getElementById('profile-img').src = userData.photoURL;
+                document.getElementById('nav-user-img').src = userData.photoURL;
+                document.getElementById('post-author-img').src = userData.photoURL;
+                xpManager.sync(user);
+                loadGlobalFeed();
+            } else {
+                currentUser = null;
+                authGuard.classList.remove('d-none');
+                mainContent.classList.add('d-none');
+            }
+        });
+
+        window.handleLogin = () => signInWithPopup(auth, googleProvider).catch(err => alert(err.message));
+        window.handleAnonymousLogin = () => signInAnonymously(auth).catch(err => alert(err.message));
+        window.handleLogout = () => {
+            signOut(auth);
+            location.reload(); // Refresh to reset UI state
+        };
+
+        window.handlePhoneLogin = async function() {
+            const phoneNumber = "+" + document.getElementById('phone-number').value.replace(/\D/g, '');
+            if (phoneNumber.length < 8) return alert("Please enter a valid phone number with country code.");
+
+            try {
+                if (!window.recaptchaVerifier) {
+                    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                        'size': 'invisible'
+                    });
+                }
+
+                const result = await signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier);
+                confirmationResult = result;
+                document.getElementById('phone-login-step1').classList.add('d-none');
+                document.getElementById('phone-login-step2').classList.remove('d-none');
+                alert("Verification code sent!");
+            } catch (err) {
+                console.error(err);
+                alert("Error: " + err.message);
+                if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
+            }
+        };
+
+        window.verifyOTP = async function() {
+            const code = document.getElementById('otp-code').value.trim();
+            if (!code) return alert("Enter the 6-digit code.");
+
+            try {
+                await confirmationResult.confirm(code);
+            } catch (err) {
+                alert("Invalid code: " + err.message);
+            }
+        };
+
+        window.createHubPost = async function() {
+            const content = document.getElementById('hub-post-content').value.trim();
+            if (!content) return;
+            if (!currentUser) {
+                alert("You must be signed in to post.");
+                return;
+            }
+            
+            const btn = document.querySelector('[onclick="window.createHubPost()"]');
+            btn.innerHTML = '<i class="fas fa-robot"></i> Moderating...';
+            btn.disabled = true;
+
+            try {
+                // Call AI Moderator with client-side Groq
+                const prompt = `Analyze this social media post for toxicity, hate speech, or extreme spam: "${content}". Reply with ONLY the word "SAFE" if it is okay, or "TOXIC" if it should be blocked.`;
+                const status = await window.runAITask(prompt, "You are a content moderator.");
+                
+                const modResult = { data: { status: status.toUpperCase().includes("TOXIC") ? "TOXIC" : "SAFE" } };
+                
+                if (modResult.data && modResult.data.status === "TOXIC") {
+                    alert("⚠️ Your post was flagged as inappropriate and was not posted.");
+                    document.getElementById('hub-post-content').value = '';
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post to Hub';
+                    btn.disabled = false;
+                    return;
+                }
+
+                const userSnap = await get(ref(db, `users/${currentUser.uid}`));
+                const userData = userSnap.exists() ? userSnap.val() : {};
+
+                const postData = {
+                    uid: currentUser.uid,
+                    authorName: userData.name || currentUser.displayName || "Anonymous",
+                    authorImg: userData.photoURL || currentUser.photoURL || "assets/images/prinzo.jpg",
+                    content: content,
+                    timestamp: Date.now()
+                };
+                
+                await push(ref(db, `posts`), postData);
+                document.getElementById('hub-post-content').value = '';
+                if (xpManager) xpManager.addXP(10);
+                
+            } catch (err) {
+                console.error("Post creation error:", err);
+                alert("Failed to post: " + (err.message || "Unknown error"));
+            } finally {
+                btn.innerHTML = 'Post to Feed';
+                btn.disabled = false;
+            }
+        };
+
+        window.deletePost = async function(postId) {
+            const isAdmin = currentUser && currentUser.email === 'shermanprinz14@gmail.com';
+            const msg = isAdmin ? "Admin: Delete this post?" : "Are you sure you want to delete this post?";
+            if (!confirm(msg)) return;
+            try {
+                await remove(ref(db, `posts/${postId}`));
+            } catch (err) {
+                console.error("Delete error:", err);
+                alert("Failed to delete post.");
+            }
+        };
+
+        function loadGlobalFeed() {
+            const feed = document.getElementById('global-feed');
+            const postsQuery = query(ref(db, 'posts'), limitToLast(30));
+            onValue(postsQuery, (snap) => {
+                feed.innerHTML = '';
+                if (!snap.exists()) {
+                    feed.innerHTML = '<div class="text-center py-5 opacity-50">No community posts yet. Be the first!</div>';
+                    return;
+                }
+                const posts = [];
+                snap.forEach(child => { 
+                    const data = child.val();
+                    data.id = child.key;
+                    posts.push(data); 
+                });
+                
+                posts.reverse().forEach(post => {
+                    const isOwner = currentUser && post.uid === currentUser.uid;
+                    const isAdmin = currentUser && currentUser.email === 'shermanprinz14@gmail.com';
+                    const canDelete = isOwner || isAdmin;
+
+                    const div = document.createElement('div');
+                    div.className = 'post-card fade-in';
+                    div.innerHTML = `
+                        <div class="d-flex align-items-center mb-3">
+                            <a href="profile.html?uid=${post.uid}"><img src="${post.authorImg}" class="rounded-circle me-3" width="45" height="45"></a>
+                            <div class="flex-grow-1">
+                                <a href="profile.html?uid=${post.uid}" class="text-decoration-none text-white"><b class="d-block">${post.authorName}</b></a>
+                                <small class="text-muted">${new Date(post.timestamp).toLocaleString()}</small>
+                            </div>
+                            ${canDelete ? `
+                                <button class="btn btn-link text-danger p-0 opacity-50 hover-opacity-100" onclick="window.deletePost('${post.id}')" title="${isAdmin && !isOwner ? 'Admin Delete' : 'Delete Post'}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                        <p class="mb-0" style="white-space: pre-wrap;">${post.content}</p>
+                    `;
+                    feed.appendChild(div);
+                });
+            });
+        }
+
+        // --- Random Video Chat Logic ---
+        let localStream = null, peerConnection = null, currentSessionId = null, isWaiting = false;
+        let iceQueue = []; // Queue for candidates arriving before remote description
+        
+        // Helper to get myId safely - uses UID if available for better stability
+        function getMyId() {
+            if (currentUser) return currentUser.uid;
+            let id = sessionStorage.getItem('presenceId');
+            if (!id) {
+                id = Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('presenceId', id);
+            }
+            return id;
+        }
+        
+        // Robust Debug Logger
+        function logDebug(msg) {
+            const el = document.getElementById('webrtc-debug');
+            if (el) {
+                el.style.display = 'block';
+                const time = new Date().toLocaleTimeString().split(' ')[0];
+                el.innerHTML += `<div>[${time}] ${msg}</div>`;
+                el.scrollTop = el.scrollHeight;
+            }
+            console.log(`[WebRTC] ${msg}`);
+        }
+
+        // Highly robust STUN/TURN configuration
+        const rtcConfig = { 
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                {
+                    urls: 'turn:global.turn.twilio.com:3478?transport=udp',
+                    username: 'dc2d2894d5a9023620c467b0e71cfa6a35457e6679785ed6ae9856fe5bdfa269',
+                    credential: 'tE2DajzSJwnsSbc123'
+                },
+                { 
+                    urls: [
+                        'turn:openrelay.metered.ca:80',
+                        'turn:openrelay.metered.ca:443',
+                        'turn:openrelay.metered.ca:443?transport=tcp'
+                    ],
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:relay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ],
+            iceCandidatePoolSize: 5,
+            iceTransportPolicy: 'all'
+        };
+                window.toggleRandomCall = async function() {
+                    if (isWaiting || currentSessionId) { 
+                        logDebug("Closing session and refreshing...");
+                        location.reload(); 
+                        return; 
+                    }
+                    const myId = getMyId();
+                    try {
+                        logDebug("Requesting camera/mic...");
+                        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                        document.getElementById('localVideo').srcObject = localStream;
+                        document.getElementById('video-area').classList.remove('d-none');
+                        document.getElementById('startCallBtn').innerHTML = '<i class="fas fa-stop me-2"></i> Stop Call';
+                        
+                        logDebug("Cleaning old signals...");
+                        await remove(ref(db, `random_signals/${myId}`));
+                        
+                        findMatch();
+                    } catch (e) { 
+                        logDebug("Media Error: " + e.message);
+                        alert("Camera and microphone access are required for video calls."); 
+                    }
+                };
+        
+                async function findMatch() {
+                    const myId = getMyId();
+                    const status = document.getElementById('call-status');
+                    status.innerText = "Searching...";
+                    logDebug("Searching for a partner...");
+                    
+                    const waitingRoomRef = ref(db, 'random_waiting');
+                    const snapshot = await get(waitingRoomRef);
+                    let matchId = null;
+                    
+                    if (snapshot.exists()) {
+                        const waitingUsers = snapshot.val();
+                        for (let id in waitingUsers) { 
+                            if (id !== myId) { matchId = id; break; } 
+                        }
+                    }
+                    
+                                    if (matchId) {
+                                        // Matchmaking: Smaller ID is always the Caller to prevent double-offer glare
+                                        const isCaller = myId < matchId;
+                                        try {
+                                            const matchRef = ref(db, `random_waiting/${matchId}`);
+                                            await remove(matchRef);
+                                            currentSessionId = isCaller ? `${myId}_${matchId}` : `${matchId}_${myId}`;
+                                            logDebug(`Partner found: ${matchId.slice(0,5)} (${isCaller ? 'Caller' : 'Answerer'})`);
+                                            startSignaling(matchId, isCaller);
+                                        } catch (e) { 
+                                            findMatch(); 
+                                        }
+                                    } else {                        isWaiting = true;
+                        status.innerText = "Waiting for partner...";
+                        logDebug("No one available. Waiting in queue...");
+                        const myWaitingRef = ref(db, `random_waiting/${myId}`);
+                        await set(myWaitingRef, true);
+                        onDisconnect(myWaitingRef).remove();
+                        
+                                        onValue(ref(db, `random_signals/${myId}`), async (snap) => {
+                                            if (snap.exists() && !currentSessionId) {
+                                                const data = snap.val(); 
+                                                const partnerId = Object.keys(data)[0];
+                                                if (data[partnerId] && (data[partnerId].offer || data[partnerId].answer)) {
+                                                    // If they sent an answer, I must have been the caller
+                                                    const isCaller = !!data[partnerId].answer;
+                                                    currentSessionId = isCaller ? `${myId}_${partnerId}` : `${partnerId}_${myId}`;
+                                                    logDebug(`Inbound from: ${partnerId.slice(0,5)}`);
+                                                    startSignaling(partnerId, isCaller);
+                                                }
+                                            }
+                                        });                    }
+                }
+        
+                async function startSignaling(otherId, isCaller) {
+                    const myId = getMyId();
+                    const status = document.getElementById('call-status');
+                    status.innerText = "Connecting..."; 
+                    logDebug("Initializing WebRTC Connection...");
+                    
+                    peerConnection = new RTCPeerConnection(rtcConfig);
+                    iceQueue = [];
+        
+                    localStream.getTracks().forEach(track => {
+                        peerConnection.addTrack(track, localStream);
+                    });
+                    
+                    peerConnection.oniceconnectionstatechange = () => {
+                        const state = peerConnection.iceConnectionState;
+                        logDebug("ICE State: " + state);
+                        if (state === 'connected' || state === 'completed') {
+                            status.innerText = "Live Call";
+                            status.className = "badge bg-success mb-3";
+                        } else if (state === 'failed') {
+                            status.innerText = "Failed - Relaying blocked";
+                            status.className = "badge bg-danger mb-3";
+                            logDebug("Tip: Try switching from Data to WiFi or vice-versa.");
+                        }
+                    };
+        
+                    peerConnection.ontrack = (e) => {
+                        logDebug("Remote media received");
+                        const remoteVid = document.getElementById('remoteVideo');
+                        if (remoteVid.srcObject !== e.streams[0]) {
+                            remoteVid.srcObject = e.streams[0];
+                            remoteVid.play().catch(err => logDebug("Autoplay block: " + err));
+                        }
+                    };
+                    
+                    peerConnection.onicecandidate = (e) => { 
+                        if (e.candidate) {
+                            const type = e.candidate.candidate.split(' ')[7];
+                            logDebug(`Local ICE: ${type} found`);
+                            
+                            const candRef = ref(db, `random_signals/${otherId}/${myId}/candidates`);
+                            push(candRef, e.candidate.toJSON()); 
+                        }
+                    };
+        
+                    const candidatesRef = ref(db, `random_signals/${myId}/${otherId}/candidates`);
+                    onChildAdded(candidatesRef, (snap) => {
+                        const candidate = snap.val();
+                        if (candidate && candidate.candidate) {
+                            const type = candidate.candidate.split(' ')[7];
+                            logDebug(`Remote ICE: ${type} received`);
+                        }
+        
+                        if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+                            peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => {});
+                        } else {
+                            iceQueue.push(candidate);
+                        }
+                    });
+        
+                    if (isCaller) {
+                        logDebug("Sending Offer...");
+                        const offer = await peerConnection.createOffer({
+                            offerToReceiveAudio: true,
+                            offerToReceiveVideo: true
+                        });
+                        await peerConnection.setLocalDescription(offer);
+                        await set(ref(db, `random_signals/${otherId}/${myId}/offer`), {
+                            type: offer.type, sdp: offer.sdp
+                        });
+                        
+                        const answerRef = ref(db, `random_signals/${myId}/${otherId}/answer`);
+                        onValue(answerRef, async (snap) => {
+                            if (snap.exists() && !peerConnection.remoteDescription) {
+                                logDebug("Answer Received");
+                                await peerConnection.setRemoteDescription(new RTCSessionDescription(snap.val()));
+                                processIceQueue();
+                            }
+                        });
+                    } else {
+                        const offerRef = ref(db, `random_signals/${myId}/${otherId}/offer`);
+                        onValue(offerRef, async (snap) => {
+                            if (snap.exists() && !peerConnection.remoteDescription) {
+                                logDebug("Offer Received");
+                                await peerConnection.setRemoteDescription(new RTCSessionDescription(snap.val()));
+                                const answer = await peerConnection.createAnswer();
+                                await peerConnection.setLocalDescription(answer);
+                                await set(ref(db, `random_signals/${otherId}/${myId}/answer`), {
+                                    type: answer.type, sdp: answer.sdp
+                                });
+                                processIceQueue();
+                            }
+                        });
+                    }
+                }
+        
+                function processIceQueue() {
+                    logDebug("Applying " + iceQueue.length + " queued candidates");
+                    while (iceQueue.length > 0) {
+                        const candidate = iceQueue.shift();
+                        peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => {});
+                    }
+                }
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered!', reg))
+                    .catch(err => console.log('SW Reg Failed!', err));
+            });
+        }
+    </script>
+</body>
+</html>

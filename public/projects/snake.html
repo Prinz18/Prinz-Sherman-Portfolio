@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Play the classic Snake Game by Prinz Sherman. Control the snake with arrow keys or voice commands. Compete for the high score on the leaderboard!">
+    <meta name="keywords" content="Snake Game, Voice Controlled Game, Browser Game, Prinz Sherman, JavaScript Games">
+    
+    <!-- Canonical and Social Meta -->
+    <link rel="canonical" href="https://prinzsherman.web.app/projects/snake.html">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://prinzsherman.web.app/projects/snake.html">
+    <meta property="og:title" content="Snake Game | Play Online at Prinz Sherman">
+    <meta property="og:description" content="Classic Snake Game with a modern twist—voice controls and a global leaderboard.">
+    <meta property="og:image" content="https://prinzsherman.web.app/assets/images/prinzo.jpg">
+
+    <!-- iOS PWA meta tags -->
+    <link rel="apple-touch-icon" href="../assets/images/prinzo.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#111">
+
+    <title>Snake Game | Prinz Sherman</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/snake.css">
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- AI Assistant Scripts -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1500.0.min.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <link rel="icon" type="image/jpg" href="../assets/images/prinzo.jpg">
+</head>
+<body style="background: #111;">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top" style="z-index: 2000;">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="../index.html">Prinz Sherman</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    <li class="nav-item"><span id="online-count" class="badge bg-success rounded-pill px-3">0 Online</span></li>
+                    <li class="nav-item"><a class="nav-link" href="../index.html">Portfolio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../community.html">Community</a></li>
+                    <li class="nav-item"><a class="nav-link" href="little-lemon.html">Restaurant</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="snake.html">Snake Game</a></li>
+                    <li class="nav-item"><a class="nav-link" href="checkers.html">Checkers</a></li>
+                    <li class="nav-item"><a class="nav-link" href="ludo.html">Ludo</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container text-center py-4">
+        <h1 class="text-white mb-4">Snake Game</h1>
+        
+        <div class="d-flex flex-wrap justify-content-center gap-3 gap-md-5 my-3 text-white">
+            <div class="h5 mb-0">Score: <span id="score" class="text-primary">0</span></div>
+            <div class="h5 mb-0">Your Best: <span id="personalBestDisplay" class="text-success">0</span></div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="card bg-dark border-secondary mx-auto mb-3" style="max-width: 300px;">
+            <div class="card-body py-2">
+                <h6 class="text-warning mb-2"><i class="fas fa-trophy"></i> Top 3 Players</h6>
+                <div id="leaderboardList" class="small text-white text-start">
+                    <div class="d-flex justify-content-between border-bottom border-secondary mb-1 pb-1"><span>Loading...</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="gameContainer" class="mx-auto shadow-lg position-relative" style="border: 4px solid #333; max-width: 500px; width: 100%;">
+            <canvas id="gameCanvas" width="500" height="500" style="display: block; width: 100%;"></canvas>
+            
+            <!-- Start Overlay -->
+            <div id="startOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center" style="background: rgba(0,0,0,0.8); z-index: 100;">
+                <div id="giphyCelebration" class="mb-3 d-none">
+                    <img id="giphyImg" src="" width="150" class="rounded shadow">
+                </div>
+                <h2 class="text-white mb-4">Snake Game</h2>
+                
+                <!-- New High Score Input (Hidden by default) -->
+                <div id="highScoreInputArea" class="d-none text-center mb-4 p-3 bg-primary rounded shadow" style="max-width: 80%;">
+                    <h4 class="text-white">New Leaderboard Score!</h4>
+                    <p class="text-white small">You made it to the top 3! Enter your name:</p>
+                    <div class="input-group">
+                        <input type="text" id="playerNameInput" class="form-control" placeholder="Full Name">
+                        <button class="btn btn-warning" onclick="submitScore()">Submit</button>
+                    </div>
+                </div>
+
+                <button id="mainStartBtn" class="btn btn-primary btn-lg px-5 rounded-pill shadow" onclick="startGame()">Start Game</button>
+                <p class="text-muted mt-3 small">Use arrows or voice to control</p>
+            </div>
+        </div>
+
+        <div class="btn-group my-3">
+            <button class="btn btn-outline-light" onclick="resetGame()">Reset</button>
+            <button class="btn btn-outline-light" onclick="togglePause()">Pause</button>
+            <button class="btn btn-outline-light" onclick="toggleVoiceControl()" id="voiceBtn">Voice Start</button>
+            <button class="btn btn-outline-light" onclick="toggleControls()">Stick</button>
+        </div>
+
+        <div id="voiceStatus" class="text-success fw-bold mb-3" style="min-height: 24px;"></div>
+        
+        <div class="analog-stick mx-auto" id="analogStick">
+            <div class="analog-knob" id="analogKnob"></div>
+        </div>
+    </div>
+
+    <!-- AI Assistant UI -->
+    <div id="ai-assistant-btn" onclick="toggleChat()">
+        <i class="fas fa-robot"></i>
+    </div>
+
+    <div id="ai-chat-window">
+        <div class="chat-header" style="height: 150px; position: relative; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); overflow: hidden;">
+            <!-- Cartoon AI Avatar -->
+            <img id="ai-avatar" src="/assets/images/alexa-robot.png" 
+                 style="width: 120px; height: 120px; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); object-fit: contain; z-index: 5;">
+            <div style="position: relative; z-index: 10; margin-top: 10px; margin-left: 15px;">
+                <h6 class="mb-0 fw-bold text-white" style="text-shadow: 0 2px 10px rgba(0,0,0,0.8);">Alexa (AI Assistant)</h6>
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-success" style="text-shadow: 0 1px 5px rgba(0,0,0,0.5);">● Online</small>
+                    <select id="chat-lang" class="bg-dark border-0 text-white-50 small rounded-pill px-2" style="outline:none; cursor:pointer; font-size: 0.75rem;" onchange="updateChatLanguage()">
+                        <option value="en">English</option>
+                        <option value="fr">French</option>
+                        <option value="es">Spanish</option>
+                        <option value="ar">Arabic</option>
+                        <option value="zh">Chinese</option>
+                        <option value="de">German</option>
+                        <option value="it">Italian</option>
+                        <option value="ja">Japanese</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="ru">Russian</option>
+                        <option value="hi">Hindi</option>
+                        <option value="ro">Romanian</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-sm text-white ms-auto" style="position: absolute; top: 10px; right: 10px; z-index: 11; background: rgba(0,0,0,0.3); border-radius: 50%;" onclick="toggleChat()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="message ai-msg">Hi! I'm your AI assistant. How can I help you?</div>
+        </div>
+        <div class="chat-footer">
+            <button class="btn btn-outline-primary btn-circle" onclick="startVoiceRecognition()" id="mic-btn"><i class="fas fa-microphone"></i></button>
+            <input type="text" class="chat-input" id="chat-input" placeholder="Ask me something..." onkeypress="handleChatKey(event)">
+            <button class="btn btn-primary btn-circle" onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="../assets/js/presence.js"></script>
+    <script src="/assets/js/aws-ai.js"></script>
+    
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import { getDatabase, ref, get, set, child } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC7lbpbRN86mWeQ6Wwj1d8saGtY9IU6yTk",
+            authDomain: "prinz-08ee97cc.firebaseapp.com",
+            databaseURL: "https://prinz-08ee97cc-default-rtdb.firebaseio.com",
+            projectId: "prinz-08ee97cc",
+            storageBucket: "prinz-08ee97cc.firebasestorage.app",
+            messagingSenderId: "431949566856",
+            appId: "1:431949566856:web:47f131b012c3055c6ae03d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+
+        // Global Auth Check
+        let guestId = localStorage.getItem('snakeGuestId') || 'guest_' + Math.random().toString(36).substr(2, 9);
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                alert("Please sign in on the home page first!");
+                window.location.href = "../community.html";
+            } else {
+                guestId = user.uid; // Use UID for logged in users
+                const snap = await get(ref(database, `users/${user.uid}`));
+                if (snap.exists()) {
+                    document.getElementById('playerNameInput').value = snap.val().name;
+                } else {
+                    document.getElementById('playerNameInput').value = user.displayName || user.phoneNumber || "Guest";
+                }
+                
+                // Load personal best for this user
+                get(child(ref(database), 'userScores/' + guestId)).then((snapshot) => {
+                    if (snapshot.exists()) document.getElementById('personalBestDisplay').textContent = snapshot.val().personalBest;
+                });
+            }
+        });
+
+        localStorage.setItem('snakeGuestId', guestId);
+
+        let currentLeaderboard = [];
+
+        window.loadLeaderboard = function() {
+            get(child(ref(database), 'leaderboard')).then((snapshot) => {
+                const list = document.getElementById('leaderboardList');
+                list.innerHTML = '';
+                currentLeaderboard = snapshot.exists() ? snapshot.val() : [];
+                
+                // Ensure it's an array and sorted
+                if (!Array.isArray(currentLeaderboard)) currentLeaderboard = [];
+                currentLeaderboard.sort((a, b) => b.score - a.score);
+
+                for (let i = 0; i < 3; i++) {
+                    const entry = currentLeaderboard[i] || { name: '---', score: 0 };
+                    list.innerHTML += `<div class="d-flex justify-content-between border-bottom border-secondary mb-1 pb-1">
+                        <span>${i+1}. ${entry.name}</span>
+                        <span class="text-warning">${entry.score}</span>
+                    </div>`;
+                }
+            });
+        };
+
+        window.saveHighScore = function(newScore) {
+            // Check Personal Best
+            const userScoreRef = ref(database, 'userScores/' + guestId);
+            get(userScoreRef).then((snapshot) => {
+                const currentBest = (snapshot.exists() && snapshot.val().personalBest) ? snapshot.val().personalBest : 0;
+                if (newScore > currentBest) {
+                    set(userScoreRef, { personalBest: newScore, timestamp: Date.now() });
+                    document.getElementById('personalBestDisplay').textContent = newScore;
+                }
+            });
+
+            // Check if in Top 3
+            const lowestTopScore = currentLeaderboard.length < 3 ? 0 : currentLeaderboard[2].score;
+            if (newScore > lowestTopScore && newScore > 0) {
+                window.pendingScore = newScore;
+                document.getElementById('highScoreInputArea').classList.remove('d-none');
+                document.getElementById('mainStartBtn').classList.add('d-none');
+            }
+        };
+
+        window.submitScore = function() {
+            const name = document.getElementById('playerNameInput').value.trim() || "Anonymous";
+            const newScore = window.pendingScore;
+
+            currentLeaderboard.push({ name: name, score: newScore });
+            currentLeaderboard.sort((a, b) => b.score - a.score);
+            const top3 = currentLeaderboard.slice(0, 3);
+
+            set(ref(database, 'leaderboard'), top3).then(() => {
+                document.getElementById('highScoreInputArea').classList.add('d-none');
+                document.getElementById('mainStartBtn').classList.remove('d-none');
+                window.loadLeaderboard();
+                
+                // Show Celebration GIF
+                const giphyApiKey = 'dc6zaTOxFJmzC'; // Public beta key
+                fetch(`https://api.giphy.com/v1/gifs/random?api_key=${giphyApiKey}&tag=celebration`)
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('giphyImg').src = data.data.images.fixed_width.url;
+                        document.getElementById('giphyCelebration').classList.remove('d-none');
+                    });
+            });
+        };
+
+        window.loadLeaderboard();
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../sw.js')
+                    .then(reg => console.log('SW Registered!', reg))
+                    .catch(err => console.log('SW Reg Failed!', err));
+            });
+        }
+    </script>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 25; // Adjusted for 500px canvas
+        const tileCount = canvas.width / gridSize;
+        let snake = [{x: 10, y: 10}];
+        let food = {x: 15, y: 15};
+        let score = 0;
+        let gameRunning = false;
+        let isPaused = false;
+        let dx = 1, dy = 0, nextDx = 1, nextDy = 0;
+
+        function startGame() {
+            document.getElementById('startOverlay').classList.add('d-none');
+            gameRunning = true;
+            resetGame();
+        }
+
+        function spawnFood() {
+            food = { x: Math.floor(Math.random() * tileCount), y: Math.floor(Math.random() * tileCount) };
+        }
+
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            snake.forEach((segment, index) => {
+                ctx.fillStyle = index === 0 ? '#fff' : '#00ff00';
+                ctx.fillRect(segment.x * gridSize + 1, segment.y * gridSize + 1, gridSize - 2, gridSize - 2);
+            });
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+            if (isPaused) {
+                ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.fillStyle = '#fff'; ctx.font = '30px Arial'; ctx.textAlign = 'center';
+                ctx.fillText('PAUSED', canvas.width/2, canvas.height/2);
+            }
+        }
+
+        function update() {
+            if (!gameRunning || isPaused) return;
+            dx = nextDx; dy = nextDy;
+            const head = snake[0];
+            let newHead = { x: head.x + dx, y: head.y + dy };
+            
+            // Wall wrap
+            if (newHead.x >= tileCount) newHead.x = 0;
+            if (newHead.x < 0) newHead.x = tileCount - 1;
+            if (newHead.y >= tileCount) newHead.y = 0;
+            if (newHead.y < 0) newHead.y = tileCount - 1;
+
+            if (snake.some(s => s.x === newHead.x && s.y === newHead.y)) {
+                gameRunning = false;
+                if (window.saveHighScore) window.saveHighScore(score);
+                document.getElementById('startOverlay').classList.remove('d-none');
+                document.querySelector('#startOverlay h2').textContent = "Game Over!";
+                document.querySelector('#startOverlay button').textContent = "Play Again";
+                return;
+            }
+            snake.unshift(newHead);
+            if (newHead.x === food.x && newHead.y === food.y) {
+                score += 10; document.getElementById('score').textContent = score; spawnFood();
+            } else snake.pop();
+        }
+
+        function gameLoop() {
+            update(); draw(); setTimeout(() => requestAnimationFrame(gameLoop), 100);
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowUp' && dy === 0) { nextDx = 0; nextDy = -1; }
+            if (e.key === 'ArrowDown' && dy === 0) { nextDx = 0; nextDy = 1; }
+            if (e.key === 'ArrowLeft' && dx === 0) { nextDx = -1; nextDy = 0; }
+            if (e.key === 'ArrowRight' && dx === 0) { nextDx = 1; nextDy = 0; }
+            if (e.key === ' ') togglePause();
+        });
+
+        function togglePause() { isPaused = !isPaused; }
+        function resetGame() { 
+            snake = [{x: 10, y: 10}]; score = 0; gameRunning = true; 
+            nextDx = 1; nextDy = 0; document.getElementById('score').textContent = '0'; spawnFood();
+        }
+
+        const stick = document.getElementById('analogStick');
+        const knob = document.getElementById('analogKnob');
+        let active = false;
+        function handleStart() { active = true; }
+        function handleMove(e) {
+            if (!active) return;
+            const touch = e.touches ? e.touches[0] : e;
+            const r = stick.getBoundingClientRect();
+            const x = touch.clientX - (r.left + r.width/2);
+            const y = touch.clientY - (r.top + r.height/2);
+            const dist = Math.sqrt(x*x + y*y);
+            const max = r.width/2 - 20;
+            const moveX = dist > max ? (x/dist)*max : x;
+            const moveY = dist > max ? (y/dist)*max : y;
+            knob.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
+            if (Math.abs(x) > 15 || Math.abs(y) > 15) {
+                if (Math.abs(x) > Math.abs(y)) { if (x > 0 && dx === 0) { nextDx = 1; nextDy = 0; } else if (x < 0 && dx === 0) { nextDx = -1; nextDy = 0; } }
+                else { if (y > 0 && dy === 0) { nextDx = 0; nextDy = 1; } else if (y < 0 && dy === 0) { nextDx = 0; nextDy = -1; } }
+            }
+        }
+        function handleEnd() { active = false; knob.style.transform = 'translate(-50%, -50%)'; }
+        stick.addEventListener('touchstart', handleStart);
+        document.addEventListener('touchmove', handleMove);
+        document.addEventListener('touchend', handleEnd);
+        function toggleControls() { stick.style.display = stick.style.display === 'block' ? 'none' : 'block'; }
+
+        let recognition;
+        let isVoiceActive = false;
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                // Process EVERY result (interim and final) for maximum speed
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcript = event.results[i][0].transcript.toLowerCase().trim();
+                    processCommand(transcript);
+                }
+            };
+
+            recognition.onerror = (e) => {
+                console.error("Speech recognition error", e.error);
+                if (e.error === 'not-allowed') {
+                    alert("Mic permission denied. Please enable your microphone.");
+                    isVoiceActive = false;
+                    updateVoiceButton();
+                }
+            };
+
+            recognition.onend = () => {
+                if (isVoiceActive) {
+                    try { recognition.start(); } catch(e) {}
+                }
+            };
+        }
+
+        function processCommand(cmd) {
+            const status = document.getElementById('voiceStatus');
+            status.textContent = "🎤 " + cmd;
+            
+            // High-Sensitivity Detection: Includes common mishearings/phonetic variations
+            const upWords = ['up', 'app', 'top', 'above', 'north'];
+            const downWords = ['down', 'done', 'town', 'bottom', 'south'];
+            const leftWords = ['left', 'life', 'lift', 'laugh', 'west'];
+            const rightWords = ['right', 'write', 'ride', 'light', 'east'];
+
+            if (upWords.some(w => cmd.includes(w)) && dy === 0) { nextDx = 0; nextDy = -1; }
+            else if (downWords.some(w => cmd.includes(w)) && dy === 0) { nextDx = 0; nextDy = 1; }
+            else if (leftWords.some(w => cmd.includes(w)) && dx === 0) { nextDx = -1; nextDy = 0; }
+            else if (rightWords.some(w => cmd.includes(w)) && dx === 0) { nextDx = 1; nextDy = 0; }
+        }
+
+        function updateVoiceButton() {
+            const btn = document.getElementById('voiceBtn');
+            const status = document.getElementById('voiceStatus');
+            if (isVoiceActive) {
+                btn.textContent = 'Voice Stop';
+                btn.classList.replace('btn-outline-light', 'btn-danger');
+                status.textContent = "🎤 Listening...";
+            } else {
+                btn.textContent = 'Voice Start';
+                btn.classList.replace('btn-danger', 'btn-outline-light');
+                status.textContent = "";
+            }
+        }
+
+        function toggleVoiceControl() {
+            if (!recognition) {
+                alert("Speech recognition not supported in this browser.");
+                return;
+            }
+
+            if (!isVoiceActive) {
+                isVoiceActive = true;
+                try {
+                    recognition.start();
+                    updateVoiceButton();
+                } catch (e) {
+                    console.error("Failed to start recognition", e);
+                }
+            } else {
+                isVoiceActive = false;
+                recognition.stop();
+                updateVoiceButton();
+            }
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

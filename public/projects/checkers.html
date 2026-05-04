@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Play Multiplayer Checkers online with friends. Supports International, Brazilian, Spanish, Italian, and Turkish variants.">
+    <title>Multiplayer Checkers | Prinz Sherman</title>
+
+    <!-- Canonical and Social Meta -->
+    <link rel="canonical" href="https://prinzsherman.web.app/projects/checkers.html">
+    <meta property="og:title" content="Multiplayer Checkers | Prinz Sherman">
+    <meta property="og:description" content="Play Multiplayer Checkers online. Supports International, Brazilian, Spanish, Italian, and Turkish variants.">
+    <meta property="og:url" content="https://prinzsherman.web.app/projects/checkers.html">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://prinzsherman.web.app/assets/images/prinzo.jpg">
+
+    <link rel="apple-touch-icon" href="../assets/images/prinzo.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2c3e50">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/jpg" href="../assets/images/prinzo.jpg">
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <!-- AI Assistant Scripts -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1500.0.min.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <style>
+        :root {
+            --board-size: min(95vw, 600px);
+            --grid-cols: 8;
+            --cell-size: calc(var(--board-size) / var(--grid-cols));
+            --dark-cell: #5d4037;
+            --light-cell: #d7ccc8;
+        }
+        body { background: radial-gradient(circle, #2c3e50 0%, #000000 100%); min-height: 100vh; min-height: 100dvh; }
+        
+        #board {
+            width: var(--board-size);
+            height: var(--board-size);
+            display: grid;
+            grid-template-columns: repeat(var(--grid-cols), 1fr);
+            grid-template-rows: repeat(var(--grid-cols), 1fr);
+            border: 12px solid #3e2723;
+            border-radius: 8px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            margin: 20px auto;
+            position: relative;
+            background: var(--light-cell);
+        }
+        .cell {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .dark { background-color: var(--dark-cell); box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }
+        .light { background-color: var(--light-cell); }
+        
+        .turkish-board .cell { border: 1px solid rgba(0,0,0,0.1); }
+        
+        .piece {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        
+        .red { 
+            background: radial-gradient(circle at 30% 30%, #ff5252, #b71c1c);
+            border: 2px solid #880e4f;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+        .black { 
+            background: radial-gradient(circle at 30% 30%, #424242, #000000);
+            border: 2px solid #212121;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+        
+        .selected { 
+            transform: scale(1.15);
+            box-shadow: 0 0 15px #f1c40f, 0 4px 8px rgba(0,0,0,0.4) !important;
+            border-color: #f1c40f !important;
+            z-index: 20;
+        }
+        
+        .king::after { 
+            content: '\f521';
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .valid-move::after {
+            content: '';
+            width: 30%;
+            height: 30%;
+            background: rgba(46, 204, 113, 0.6);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.8);
+        }
+        .valid-move:hover::after {
+            background: rgba(46, 204, 113, 0.9);
+            transform: scale(1.2);
+        }
+
+        #turn-indicator {
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .turn-my { background: #2ecc71; color: white; border: 2px solid #27ae60; }
+        .turn-opp { background: #e74c3c; color: white; border: 2px solid #c0392b; }
+
+        .last-move {
+            background-color: rgba(255, 255, 0, 0.2) !important;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="../index.html">Prinz Sherman</a>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    <li class="nav-item"><span id="online-count" class="badge bg-success rounded-pill px-3">0 Online</span></li>
+                    <li class="nav-item"><a class="nav-link" href="../index.html">Portfolio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../community.html">Community</a></li>
+                    <li class="nav-item"><a class="nav-link" href="little-lemon.html">Restaurant</a></li>
+                    <li class="nav-item"><a class="nav-link" href="snake.html">Snake Game</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="checkers.html">Checkers</a></li>
+                    <li class="nav-item"><a class="nav-link" href="ludo.html">Ludo</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4 text-center">
+        <h1 class="text-white mb-3 fw-bold"><i class="fas fa-chess-board"></i> World Checkers</h1>
+        
+        <!-- Lobby UI -->
+        <div id="lobby" class="card shadow-lg border-0 p-4 mx-auto bg-white" style="max-width: 450px; border-radius: 20px;">
+            <div id="name-area" class="mb-4">
+                <label class="form-label text-muted small fw-bold">YOUR NAME</label>
+                <input type="text" id="playerNameInput" class="form-control rounded-pill text-center border-primary" placeholder="Enter Your Name">
+            </div>
+            
+            <div id="setup-area">
+                <div class="mb-4 text-start">
+                    <label class="form-label text-muted small fw-bold d-block text-center">SELECT GAME VARIANT</label>
+                    <select id="variantSelect" class="form-select rounded-pill border-primary text-center fw-bold" style="cursor: pointer;">
+                        <option value="international">International (10x10, Flying Kings)</option>
+                        <option value="brazilian">Brazilian (8x8, Flying Kings)</option>
+                        <option value="spanish">Spanish (8x8, No Back Capture)</option>
+                        <option value="italian">Italian (8x8, Men Can't Take Kings)</option>
+                        <option value="turkish">Turkish (8x8, Orthogonal Moves)</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary btn-lg w-100 mb-3 rounded-pill fw-bold shadow" onclick="createRoom()">
+                    <i class="fas fa-plus-circle me-2"></i> Create New Game
+                </button>
+                <button class="btn btn-info btn-lg w-100 mb-3 rounded-pill fw-bold shadow text-white" onclick="startAIGame()">
+                    <i class="fas fa-robot me-2"></i> Play vs Alexa
+                </button>
+                <div class="text-muted mb-3">OR JOIN A FRIEND</div>
+                <div class="input-group mb-3">
+                    <input type="text" id="roomInput" class="form-control rounded-start-pill border-primary" placeholder="Room Code">
+                    <button class="btn btn-outline-primary rounded-end-pill fw-bold" onclick="joinRoom()">Join</button>
+                </div>
+            </div>
+
+            <div id="wait-area" class="d-none">
+                <div class="spinner-grow text-primary mb-3" role="status"></div>
+                <p class="h5 mb-2">Share this code:</p>
+                <div class="bg-light p-3 rounded-3 mb-3 border border-primary">
+                    <strong id="roomDisplay" class="text-primary display-4">----</strong>
+                </div>
+                <div class="badge bg-secondary mb-3" id="variantDisplay">Variant</div>
+                <p class="text-muted small">Waiting for opponent...</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button class="btn btn-success rounded-pill w-50" onclick="shareInvite()">
+                        <i class="fab fa-whatsapp"></i> Invite
+                    </button>
+                    <button class="btn btn-outline-danger w-50 rounded-pill" onclick="leaveRoom()">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game UI -->
+        <div id="game-area" class="d-none">
+            <div class="glass-card mb-3 py-2 px-4 bg-white shadow-sm" style="border-radius: 15px; border-bottom: 4px solid var(--primary);">
+                <div class="d-flex justify-content-around align-items-center fw-bold">
+                    <div id="player-red-info" class="text-danger"><i class="fas fa-circle"></i> <span id="name-red">Waiting...</span></div>
+                    <div class="badge bg-light text-dark shadow-sm border" id="gameVariantLabel">Standard</div>
+                    <div id="player-black-info" class="text-dark"><i class="fas fa-circle"></i> <span id="name-black">Waiting...</span></div>
+                </div>
+            </div>
+            
+            <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 mb-4">
+                <div id="turn-indicator" class="turn-my">
+                    <i class="fas fa-chess-pawn me-2"></i> <span id="turn-display">Your Turn</span>
+                </div>
+                <button class="btn btn-danger btn-sm rounded-pill px-3 shadow-sm" onclick="leaveRoom()">
+                    <i class="fas fa-sign-out-alt"></i> Quit
+                </button>
+            </div>
+            <div id="board"></div>
+            <div id="message-area" class="text-white mt-2 small"></div>
+        </div>
+    </div>
+
+    <!-- AI Assistant UI -->
+    <div id="ai-assistant-btn" onclick="toggleChat()">
+        <i class="fas fa-robot"></i>
+    </div>
+
+    <div id="ai-chat-window">
+        <div class="chat-header" style="height: 150px; position: relative; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); overflow: hidden;">
+            <!-- Cartoon AI Avatar -->
+            <img id="ai-avatar" src="/assets/images/alexa-robot.png" 
+                 style="width: 120px; height: 120px; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); object-fit: contain; z-index: 5;">
+            <div style="position: relative; z-index: 10; margin-top: 10px; margin-left: 15px;">
+                <h6 class="mb-0 fw-bold text-white" style="text-shadow: 0 2px 10px rgba(0,0,0,0.8);">Alexa (AI Assistant)</h6>
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-success" style="text-shadow: 0 1px 5px rgba(0,0,0,0.5);">● Online</small>
+                    <select id="chat-lang" class="bg-dark border-0 text-white-50 small rounded-pill px-2" style="outline:none; cursor:pointer; font-size: 0.75rem;" onchange="updateChatLanguage()">
+                        <option value="en">English</option>
+                        <option value="fr">French</option>
+                        <option value="es">Spanish</option>
+                        <option value="ar">Arabic</option>
+                        <option value="zh">Chinese</option>
+                        <option value="de">German</option>
+                        <option value="it">Italian</option>
+                        <option value="ja">Japanese</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="ru">Russian</option>
+                        <option value="hi">Hindi</option>
+                        <option value="ro">Romanian</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-sm text-white ms-auto" style="position: absolute; top: 10px; right: 10px; z-index: 11; background: rgba(0,0,0,0.3); border-radius: 50%;" onclick="toggleChat()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="message ai-msg">Hi! I'm your AI assistant. How can I help you?</div>
+        </div>
+        <div class="chat-footer">
+            <button class="btn btn-outline-primary btn-circle" onclick="startVoiceRecognition()" id="mic-btn"><i class="fas fa-microphone"></i></button>
+            <input type="text" class="chat-input" id="chat-input" placeholder="Ask me something..." onkeypress="handleChatKey(event)">
+            <button class="btn btn-primary btn-circle" onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="../assets/js/presence.js"></script>
+    <script src="/assets/js/aws-ai.js"></script>
+    
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set, remove, get } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC7lbpbRN86mWeQ6Wwj1d8saGtY9IU6yTk",
+            authDomain: "prinz-08ee97cc.firebaseapp.com",
+            databaseURL: "https://prinz-08ee97cc-default-rtdb.firebaseio.com",
+            projectId: "prinz-08ee97cc",
+            storageBucket: "prinz-08ee97cc.firebasestorage.app",
+            messagingSenderId: "431949566856",
+            appId: "1:431949566856:web:47f131b012c3055c6ae03d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        // Global Auth Check
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                alert("Please sign in on the home page first!");
+                window.location.href = "../community.html";
+            } else {
+                const snap = await get(ref(db, `users/${user.uid}`));
+                if (snap.exists()) {
+                    document.getElementById('playerNameInput').value = snap.val().name;
+                } else {
+                    document.getElementById('playerNameInput').value = user.displayName || user.phoneNumber || "Guest";
+                }
+            }
+        });
+
+        // --- Game Logic Configuration ---
+        const VARIANTS = {
+            international: { size: 10, pieces: 20, flyKing: true, menBackCapture: true, ortho: false, rules: 'Most Pieces' },
+            brazilian: { size: 8, pieces: 12, flyKing: true, menBackCapture: true, ortho: false, rules: 'Most Pieces' },
+            spanish: { size: 8, pieces: 12, flyKing: true, menBackCapture: false, ortho: false, rules: 'Priority: Pieces -> Kings' },
+            italian: { size: 8, pieces: 12, flyKing: false, menBackCapture: false, ortho: false, menCantTakeKing: true, rules: 'Priority: Pieces -> King vs Man -> Kings' },
+            turkish: { size: 8, pieces: 16, flyKing: true, menBackCapture: false, ortho: true, rules: 'Orthogonal Moves' }
+        };
+
+        let roomCode = localStorage.getItem('activeCheckersRoom');
+        let myColor = localStorage.getItem('myCheckersColor');
+        let playerNames = { red: 'Player 1', black: 'Player 2' };
+        let boardState = {};
+        let currentTurn = 'red';
+        let currentVariant = 'international';
+        let selectedPiece = null;
+        let legalMoves = []; // Stores all legal moves for current state
+        
+        // Lock for multi-jump
+        let multiJumpSource = null;
+        let isAIGame = false;
+        let moveCount = 0;
+
+        if (roomCode && myColor) {
+            listenToRoom();
+        }
+
+        window.startAIGame = function() {
+            const name = document.getElementById('playerNameInput').value.trim() || "Prinz";
+            const variant = document.getElementById('variantSelect').value;
+            isAIGame = true;
+            moveCount = 0;
+            roomCode = "AI_" + Math.floor(1000 + Math.random() * 9000);
+            myColor = 'red';
+            
+            const initialState = {
+                turn: 'red',
+                players: { red: true, black: true },
+                names: { red: name, black: "Alexa AI" },
+                variant: variant,
+                board: generateInitialBoard(variant),
+                lastMove: null,
+                isAIGame: true,
+                moveCount: 0
+            };
+            
+            set(ref(db, 'checkers/' + roomCode), initialState).then(() => {
+                localStorage.setItem('activeCheckersRoom', roomCode);
+                localStorage.setItem('myCheckersColor', 'red');
+                listenToRoom();
+            });
+        };
+
+        function checkAIMove() {
+            if (isAIGame && currentTurn === 'black') {
+                setTimeout(async () => {
+                    const aiMoves = calculateLegalMoves(boardState, 'black', currentVariant, multiJumpSource);
+                    if (aiMoves.length > 0) {
+                        
+                        // PERIODIC TACTICAL BRIEFING (Every 4 moves)
+                        if (moveCount > 0 && moveCount % 4 === 0 && typeof window.performTacticalAnalysis === 'function') {
+                            const redPieces = Object.values(boardState).filter(p => p.color === 'red');
+                            const blackPieces = Object.values(boardState).filter(p => p.color === 'black');
+                            const stats = `Red: ${redPieces.length} pieces (${redPieces.filter(p => p.king).length} Kings). Black (Alexa): ${blackPieces.length} pieces (${blackPieces.filter(p => p.king).length} Kings). Total moves: ${moveCount}.`;
+                            window.performTacticalAnalysis("Checkers", stats);
+                        }
+
+                        // MASTER AI LOGIC: Score every move
+                        let bestMove = aiMoves[0];
+                        let highestScore = -Infinity;
+
+                        aiMoves.forEach(move => {
+                            let score = 0;
+                            const config = getVariantConfig();
+                            const r = Math.floor(move.to / config.size);
+                            const c = move.to % config.size;
+
+                            // 1. CAPTURES (Extreme Priority)
+                            if (move.isCapture) score += 800 + (move.capturedCount * 200);
+                            
+                            // 2. KING HUNGER (The #1 Goal)
+                            if (!boardState[move.from].king && r === config.size - 1) {
+                                score += 1500; 
+                            }
+
+                            // 3. FORWARD MOMENTUM (Progress is rewarded)
+                            score += r * 50; 
+
+                            // 4. SMART DEFENSE (Reduced penalty)
+                            let tempBoard = { ...boardState };
+                            delete tempBoard[move.from];
+                            tempBoard[move.to] = boardState[move.from];
+                            if (move.isCapture) move.capturedIndices.forEach(idx => delete tempBoard[idx]);
+                            
+                            const userCounterMoves = calculateLegalMoves(tempBoard, 'red', currentVariant);
+                            const isVulnerable = userCounterMoves.some(m => m.capturedIndices && m.capturedIndices.includes(move.to));
+                            
+                            if (isVulnerable) {
+                                if (r < config.size - 1 && !move.isCapture) {
+                                    score -= 150; 
+                                }
+                            }
+
+                            // 5. CENTER AGGRESSION
+                            if (r >= 2 && r <= 5 && c >= 2 && c <= 5) score += 100;
+
+                            if (score > highestScore) {
+                                highestScore = score;
+                                bestMove = move;
+                            }
+                        });
+
+                        const move = bestMove;
+                        
+                        // Alexa DYNAMIC Trash Talk with Status
+                        if (typeof window.getGameCommentary === 'function') {
+                            const redCount = Object.values(boardState).filter(p => p.color === 'red').length;
+                            const blackCount = Object.values(boardState).filter(p => p.color === 'black').length;
+                            const status = blackCount > redCount ? 'winning' : (blackCount < redCount ? 'losing' : 'neutral');
+                            
+                            const event = move.isCapture ? "lost a piece to my brilliant move" : "is trying to play safe, but it won't work";
+                            window.getGameCommentary("Checkers", event, status);
+                        }
+
+                        executeMove(move);
+                    }
+                }, 1500);
+            }
+        }
+
+        function getVariantConfig() {
+            return VARIANTS[currentVariant] || VARIANTS['international'];
+        }
+
+        // --- Board & Setup ---
+
+        function generateInitialBoard(variant) {
+            const config = VARIANTS[variant];
+            let board = {};
+            const size = config.size;
+
+            if (variant === 'turkish') {
+                for (let r = 0; r < size; r++) {
+                    for (let c = 0; c < size; c++) {
+                        const i = r * size + c;
+                        if (r === 1 || r === 2) board[i] = { color: 'black', king: false };
+                        if (r === 5 || r === 6) board[i] = { color: 'red', king: false };
+                    }
+                }
+            } else {
+                const rows = (config.pieces / (size / 2)); 
+                for (let i = 0; i < size * size; i++) {
+                    let r = Math.floor(i / size);
+                    let c = i % size;
+                    if ((r + c) % 2 !== 0) { // Dark squares
+                        if (r < rows) board[i] = { color: 'black', king: false };
+                        if (r >= size - rows) board[i] = { color: 'red', king: false };
+                    }
+                }
+            }
+            return board;
+        }
+
+        window.createRoom = function() {
+            const name = document.getElementById('playerNameInput').value.trim() || "Prinz";
+            const variant = document.getElementById('variantSelect').value;
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            
+            if (roomCode) remove(ref(db, 'checkers/' + roomCode));
+
+            const initialState = {
+                turn: 'red',
+                players: { red: true },
+                names: { red: name },
+                variant: variant,
+                board: generateInitialBoard(variant),
+                lastMove: null
+            };
+            set(ref(db, 'checkers/' + code), initialState).then(() => {
+                roomCode = code;
+                myColor = 'red';
+                localStorage.setItem('activeCheckersRoom', code);
+                localStorage.setItem('myCheckersColor', 'red');
+                showWaiting(code, variant);
+                listenToRoom();
+            });
+        };
+
+        window.joinRoom = function() {
+            const name = document.getElementById('playerNameInput').value.trim() || "Guest";
+            const code = document.getElementById('roomInput').value.trim();
+            if (!code) return;
+            get(ref(db, 'checkers/' + code)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    if (data.players.black && roomCode !== code) return alert("Room full!");
+                    
+                    set(ref(db, `checkers/${code}/players/black`), true);
+                    set(ref(db, `checkers/${code}/names/black`), name).then(() => {
+                        roomCode = code;
+                        myColor = 'black';
+                        localStorage.setItem('activeCheckersRoom', code);
+                        localStorage.setItem('myCheckersColor', 'black');
+                        listenToRoom();
+                    });
+                } else {
+                    alert("Room not found!");
+                }
+            });
+        };
+
+        function listenToRoom() {
+            onValue(ref(db, 'checkers/' + roomCode), (snapshot) => {
+                if (!snapshot.exists()) {
+                    localStorage.removeItem('activeCheckersRoom');
+                    localStorage.removeItem('myCheckersColor');
+                    location.reload();
+                    return;
+                }
+                const data = snapshot.val();
+                playerNames = data.names || {};
+                currentVariant = data.variant || 'international';
+                boardState = data.board || {};
+                currentTurn = data.turn;
+                multiJumpSource = data.multiJumpSource !== undefined ? data.multiJumpSource : null;
+
+                document.getElementById('name-red').textContent = playerNames.red || "Waiting...";
+                document.getElementById('name-black').textContent = playerNames.black || "Waiting...";
+                document.getElementById('gameVariantLabel').textContent = currentVariant.toUpperCase();
+                
+                if (data.players.red && data.players.black) {
+                    showGame();
+                    isAIGame = data.isAIGame || false;
+                    moveCount = data.moveCount || 0; // Sync moveCount
+                    
+                    // Calc legal moves for current turn
+                    if (currentTurn === myColor) {
+                        legalMoves = calculateLegalMoves(boardState, myColor, currentVariant, multiJumpSource);
+                        if (legalMoves.length === 0 && !multiJumpSource) {
+                            document.getElementById('message-area').textContent = "No moves available!";
+                        } else {
+                            document.getElementById('message-area').textContent = "";
+                        }
+                    } else {
+                        legalMoves = [];
+                        checkAIMove(); // Check if it's Alexa's turn
+                    }
+                    renderBoard(data.lastMove);
+                    updateTurnUI();
+                } else {
+                    showWaiting(roomCode, currentVariant);
+                }
+            });
+        }
+
+        // --- Move Logic Core ---
+
+        function calculateLegalMoves(board, player, variant, mustJumpFrom = null) {
+            const config = VARIANTS[variant];
+            const size = config.size;
+            let moves = [];
+
+            // 1. Find all raw valid moves
+            for (let i = 0; i < size * size; i++) {
+                if (board[i] && board[i].color === player) {
+                    if (mustJumpFrom !== null && parseInt(mustJumpFrom) !== i) continue;
+                    const pieceMoves = getPieceMoves(i, board, player, config);
+                    moves.push(...pieceMoves);
+                }
+            }
+
+            // 2. Filter for Mandatory Captures
+            const captures = moves.filter(m => m.isCapture);
+            if (captures.length > 0) {
+                moves = captures;
+                // ... logic ...
+            }
+
+            // Check for Game Over (Win Detection)
+            if (moves.length === 0 && !mustJumpFrom) {
+                // Current player has no moves, so the OTHER player wins
+                const winnerColor = player === 'red' ? 'black' : 'red';
+                const winnerName = playerNames[winnerColor];
+                if (typeof window.celebrateVictory === 'function') {
+                    window.celebrateVictory(winnerName, isAIGame && winnerColor === 'black');
+                }
+            }
+
+            return moves;
+        }
+
+        function getPieceMoves(fromIdx, board, player, config) {
+            let moves = [];
+            const piece = board[fromIdx];
+            const size = config.size;
+            const r = Math.floor(fromIdx / size);
+            const c = fromIdx % size;
+            
+            let dirs = [];
+            if (config.ortho) {
+                const forward = (player === 'red') ? -1 : 1;
+                dirs.push([forward, 0]);
+                dirs.push([0, -1]);
+                dirs.push([0, 1]);
+                if (piece.king) dirs.push([-forward, 0]);
+            } else {
+                const forward = (player === 'red') ? -1 : 1;
+                dirs.push([forward, -1], [forward, 1]);
+                if (piece.king || config.menBackCapture) {
+                     dirs.push([-forward, -1], [-forward, 1]);
+                }
+            }
+
+            dirs.forEach(([dr, dc]) => {
+                const isFlying = piece.king && (config.flyKing || (config.ortho && piece.king)); 
+                const maxSteps = isFlying ? size : 1;
+                
+                // Determine if this direction is "backward" for the current player
+                const isForward = (player === 'red' && dr === -1) || (player === 'black' && dr === 1);
+                const isBackward = !isForward && dr !== 0; // dr !== 0 ensures we don't count side-moves in Turkish
+
+                for (let dist = 1; dist <= maxSteps; dist++) {
+                    const nr = r + dr * dist;
+                    const nc = c + dc * dist;
+                    if (nr < 0 || nr >= size || nc < 0 || nc >= size) break;
+
+                    const toIdx = nr * size + nc;
+                    const target = board[toIdx];
+
+                    if (!target) {
+                        // Ordinary men cannot move backward unless capturing
+                        if (!piece.king && isBackward && !config.menBackCapture) break;
+                        
+                        moves.push({
+                            from: fromIdx, to: toIdx, 
+                            isCapture: false, capturedCount: 0, kingsCaptured: 0, 
+                            path: [], capturedIndices: []
+                        });
+                        if (!isFlying) break;
+                    } else {
+                        if (target.color === player) break;
+                        
+                        // Italian Rule: Men cannot take Kings
+                        if (config.menCantTakeKing && !piece.king && target.king) break;
+
+                        // CAPTURE LOGIC (Backward is allowed here based on variant config)
+                        if (!isFlying) {
+                            const lr = nr + dr;
+                            const lc = nc + dc;
+                            if (lr >= 0 && lr < size && lc >= 0 && lc < size) {
+                                const landIdx = lr * size + lc;
+                                if (!board[landIdx]) {
+                                    const chains = findJumpChains(landIdx, board, player, config, [toIdx], piece.king);
+                                    if (chains.length > 0) {
+                                        chains.forEach(chain => {
+                                            moves.push({
+                                                from: fromIdx,
+                                                to: chain.to,
+                                                isCapture: true,
+                                                capturedCount: 1 + chain.capturedCount,
+                                                kingsCaptured: (target.king ? 1 : 0) + chain.kingsCaptured,
+                                                capturedIndices: [toIdx, ...chain.capturedIndices]
+                                            });
+                                        });
+                                    } else {
+                                        moves.push({
+                                            from: fromIdx, to: landIdx, isCapture: true,
+                                            capturedCount: 1, kingsCaptured: target.king ? 1 : 0, capturedIndices: [toIdx]
+                                        });
+                                    }
+                                }
+                            }
+                        } else {
+                            // Flying King Capture
+                            for (let landDist = 1; landDist < size; landDist++) {
+                                const lr = nr + dr * landDist;
+                                const lc = nc + dc * landDist;
+                                if (lr < 0 || lr >= size || lc < 0 || lc >= size) break;
+                                const landIdx = lr * size + lc;
+                                
+                                if (board[landIdx]) break; // Blocked
+
+                                let nextBoard = {...board};
+                                delete nextBoard[toIdx];
+                                nextBoard[landIdx] = nextBoard[fromIdx];
+                                delete nextBoard[fromIdx];
+
+                                const chains = findJumpChains(landIdx, nextBoard, player, config, [], piece.king);
+                                if (chains.length > 0) {
+                                    chains.forEach(chain => {
+                                        moves.push({
+                                            from: fromIdx, to: chain.to,
+                                            isCapture: true,
+                                            capturedCount: 1 + chain.capturedCount,
+                                            kingsCaptured: (target.king ? 1 : 0) + chain.kingsCaptured,
+                                            capturedIndices: [toIdx, ...chain.capturedIndices]
+                                        });
+                                    });
+                                } else {
+                                    moves.push({
+                                        from: fromIdx, to: landIdx, isCapture: true,
+                                        capturedCount: 1, kingsCaptured: target.king ? 1 : 0, capturedIndices: [toIdx]
+                                    });
+                                }
+                            }
+                            break;
+                        }
+                        break;
+                    }
+                }
+            });
+            return moves;
+        }
+
+        function findJumpChains(currentIdx, board, player, config, excludeIndices, isKing) {
+            let chains = [];
+            const size = config.size;
+            const r = Math.floor(currentIdx / size);
+            const c = currentIdx % size;
+
+            let dirs = [];
+            if (config.ortho) {
+                const forward = (player === 'red') ? -1 : 1;
+                dirs.push([forward, 0], [0, -1], [0, 1]);
+                if (isKing) dirs.push([-forward, 0]);
+            } else {
+                const forward = (player === 'red') ? -1 : 1;
+                dirs.push([forward, -1], [forward, 1]);
+                if (isKing || config.menBackCapture) dirs.push([-forward, -1], [-forward, 1]);
+            }
+
+            dirs.forEach(([dr, dc]) => {
+                const isFlying = isKing && (config.flyKing || config.ortho);
+                const maxSteps = isFlying ? size : 1;
+
+                for (let dist = 1; dist <= maxSteps; dist++) {
+                    const nr = r + dr * dist;
+                    const nc = c + dc * dist;
+                    if (nr < 0 || nr >= size || nc < 0 || nc >= size) break;
+                    
+                    const checkIdx = nr * size + nc;
+                    if (excludeIndices.includes(checkIdx)) continue;
+
+                    const target = board[checkIdx];
+                    if (!target) {
+                        if (!isFlying) continue;
+                    } else {
+                        if (target.color === player) break;
+                        if (excludeIndices.includes(checkIdx)) break;
+                        if (config.menCantTakeKing && !isKing && target.king) break;
+
+                        if (!isFlying) {
+                             const lr = nr + dr;
+                             const lc = nc + dc;
+                             if (lr >= 0 && lr < size && lc >= 0 && lc < size) {
+                                 const landIdx = lr * size + lc;
+                                 if (!board[landIdx] || landIdx === currentIdx) {
+                                     if (!board[landIdx]) {
+                                         const subChains = findJumpChains(landIdx, board, player, config, [...excludeIndices, checkIdx], isKing);
+                                         if (subChains.length > 0) {
+                                              subChains.forEach(sc => {
+                                                  chains.push({
+                                                      to: sc.to,
+                                                      capturedCount: 1 + sc.capturedCount,
+                                                      kingsCaptured: (target.king ? 1 : 0) + sc.kingsCaptured,
+                                                      capturedIndices: [checkIdx, ...sc.capturedIndices]
+                                                  });
+                                              });
+                                         } else {
+                                             chains.push({ to: landIdx, capturedCount: 1, kingsCaptured: target.king?1:0, capturedIndices: [checkIdx] });
+                                         }
+                                     }
+                                 }
+                             }
+                        } else {
+                            for (let landDist = 1; landDist < size; landDist++) {
+                                const lr = nr + dr * landDist;
+                                const lc = nc + dc * landDist;
+                                if (lr < 0 || lr >= size || lc < 0 || lc >= size) break;
+                                const landIdx = lr * size + lc;
+                                if (board[landIdx]) break;
+
+                                let nextBoard = {...board};
+                                delete nextBoard[checkIdx];
+
+                                const subChains = findJumpChains(landIdx, nextBoard, player, config, [], isKing);
+                                if (subChains.length > 0) {
+                                    subChains.forEach(sc => {
+                                        chains.push({
+                                            to: sc.to,
+                                            capturedCount: 1 + sc.capturedCount,
+                                            kingsCaptured: (target.king?1:0) + sc.kingsCaptured,
+                                            capturedIndices: [checkIdx, ...sc.capturedIndices]
+                                        });
+                                    });
+                                } else {
+                                     chains.push({ to: landIdx, capturedCount: 1, kingsCaptured: target.king?1:0, capturedIndices: [checkIdx] });
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            });
+            return chains;
+        }
+
+        // --- Render & Interaction ---
+
+        function renderBoard(lastMove = null) {
+            const boardEl = document.getElementById('board');
+            if (!boardEl) return;
+            
+            const config = getVariantConfig();
+            const size = config.size;
+            
+            document.documentElement.style.setProperty('--grid-cols', size);
+            
+            boardEl.innerHTML = '';
+            
+            for (let i = 0; i < size * size; i++) {
+                const cell = document.createElement('div');
+                const r = Math.floor(i/size), c = i%size;
+                
+                cell.className = `cell ${(r+c)%2 ? 'dark' : 'light'}`;
+                
+                if (lastMove && (lastMove.from === i || lastMove.to === i)) {
+                    cell.classList.add('last-move');
+                }
+
+                cell.onclick = () => handleCellClick(i);
+
+                if (selectedPiece !== null && legalMoves.find(m => m.from === selectedPiece && m.to === i)) {
+                    cell.classList.add('valid-move');
+                }
+
+                const piece = boardState[i];
+                if (piece) {
+                    const p = document.createElement('div');
+                    p.className = `piece ${piece.color} ${piece.king ? 'king' : ''} ${selectedPiece === i ? 'selected' : ''}`;
+                    cell.appendChild(p);
+                }
+                boardEl.appendChild(cell);
+            }
+        }
+
+        function handleCellClick(i) {
+            if (currentTurn !== myColor) return;
+
+            const piece = boardState[i];
+
+            if (piece && piece.color === myColor) {
+                if (multiJumpSource !== null && parseInt(multiJumpSource) !== i) return;
+                
+                if (legalMoves.some(m => m.from === i)) {
+                    selectedPiece = i;
+                    renderBoard();
+                }
+                return;
+            }
+
+            if (selectedPiece !== null && !piece) {
+                const move = legalMoves.find(m => m.from === selectedPiece && m.to === i);
+                if (move) {
+                    executeMove(move);
+                }
+            }
+        }
+
+        function executeMove(move) {
+            let newBoard = { ...boardState };
+            const piece = { ...newBoard[move.from] };
+            
+            if (move.isCapture) {
+                move.capturedIndices.forEach(idx => delete newBoard[idx]);
+            }
+
+            delete newBoard[move.from];
+            newBoard[move.to] = piece;
+
+            const config = getVariantConfig();
+            const r = Math.floor(move.to / config.size);
+            
+            let promoted = false;
+            if (!piece.king) {
+                // Determine promotion based on the moving piece's color
+                if ((piece.color === 'red' && r === 0) || (piece.color === 'black' && r === config.size - 1)) {
+                     piece.king = true;
+                     promoted = true;
+                }
+            }
+            
+            let nextTurn = (piece.color === 'red' ? 'black' : 'red');
+            let nextMultiJump = null;
+
+            if (move.isCapture && !promoted) {
+                const followUpMoves = calculateLegalMoves(newBoard, piece.color, currentVariant, move.to);
+                const captureMoves = followUpMoves.filter(m => m.isCapture);
+                
+                if (captureMoves.length > 0) {
+                    nextTurn = piece.color;
+                    nextMultiJump = move.to;
+                }
+            }
+
+            set(ref(db, `checkers/${roomCode}`), {
+                board: newBoard,
+                turn: nextTurn,
+                multiJumpSource: nextMultiJump,
+                players: { red: true, black: true },
+                names: playerNames,
+                variant: currentVariant,
+                lastMove: move,
+                isAIGame: isAIGame,
+                moveCount: moveCount + 1 // Increment moveCount
+            });
+            
+            selectedPiece = null;
+        }
+
+        // --- UI Utils ---
+
+        function updateTurnUI() {
+            const indicator = document.getElementById('turn-indicator');
+            const text = document.getElementById('turn-display');
+            const isMyTurn = currentTurn === myColor;
+            
+            if (isMyTurn) {
+                text.textContent = "YOUR TURN";
+                indicator.className = "turn-my";
+            } else {
+                const name = playerNames[currentTurn] || "Opponent";
+                text.textContent = `${name}'s Turn`;
+                indicator.className = "turn-opp";
+            }
+        }
+
+        function showWaiting(code, variant) {
+            document.getElementById('setup-area').classList.add('d-none');
+            document.getElementById('wait-area').classList.remove('d-none');
+            document.getElementById('roomDisplay').textContent = code;
+            document.getElementById('variantDisplay').textContent = variant.toUpperCase();
+        }
+
+        function showGame() {
+            document.getElementById('lobby').classList.add('d-none');
+            document.getElementById('game-area').classList.remove('d-none');
+        }
+
+        window.shareInvite = function() {
+            const text = `Play Checkers with me! 🏁\nRoom Code: *${roomCode}*\nPlay here: https://prinzsherman.web.app/projects/checkers.html`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        };
+
+        window.leaveRoom = function() {
+            if (roomCode) remove(ref(db, 'checkers/' + roomCode));
+            localStorage.removeItem('activeCheckersRoom');
+            localStorage.removeItem('myCheckersColor');
+            location.reload();
+        };
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../sw.js')
+                    .then(reg => console.log('SW Registered!', reg))
+                    .catch(err => console.log('SW Reg Failed!', err));
+            });
+        }
+    </script>
+</body>
+</html>

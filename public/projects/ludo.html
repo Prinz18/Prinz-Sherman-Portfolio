@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludo Multiplayer Royale | Prinz Sherman</title>
+    
+    <!-- iOS PWA meta tags -->
+    <link rel="apple-touch-icon" href="../assets/images/prinzo.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0d6efd">
+
+    <!-- Canonical and Social Meta -->
+    <link rel="canonical" href="https://prinzsherman.web.app/projects/ludo.html">
+    <meta property="og:title" content="Ludo Multiplayer Royale | Prinz Sherman">
+    <meta property="og:description" content="Play Ludo online with friends in real-time with integrated video chat.">
+    <meta property="og:url" content="https://prinzsherman.web.app/projects/ludo.html">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://prinzsherman.web.app/assets/images/prinzo.jpg">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "Ludo Multiplayer Royale",
+      "author": { "@type": "Person", "name": "Prinz Sherman" },
+      "genre": "Board Game",
+      "playMode": "MultiPlayer",
+      "applicationCategory": "Game",
+      "url": "https://prinzsherman.web.app/projects/ludo.html",
+      "image": "https://prinzsherman.web.app/assets/images/prinzo.jpg",
+      "description": "Play Ludo online with friends in real-time. Features a royal dark theme and video chat support."
+    }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/jpg" href="../assets/images/prinzo.jpg">
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <!-- AI Assistant Scripts -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1500.0.min.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Lexend:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #ff4757; --green: #2ed573; --blue: #1e90ff; --yellow: #ffa502;
+            --bg-dark: #1e2124; --panel-bg: rgba(255, 255, 255, 0.05);
+            --board-border: #2f3542; --cell-size: min(6.4vw, 50px);
+        }
+        body {
+            background-color: var(--bg-dark); background-image: radial-gradient(circle at 50% 50%, #2f3542 0%, #1e2124 100%);
+            font-family: 'Lexend', sans-serif; color: white; min-height: 100vh; min-height: 100dvh; margin: 0; display: flex; flex-direction: column;
+        }
+        h1, h2, h3, .navbar-brand, .player-turn, .btn { font-family: 'Fredoka One', cursive; letter-spacing: 1px; }
+        .navbar { box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .main-container { flex: 1; display: flex; align-items: center; padding: 20px 10px; }
+        .lobby-container {
+            width: 100%; max-width: 450px; margin: 0 auto; background: var(--panel-bg); backdrop-filter: blur(15px);
+            border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .input-custom { background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: white !important; border-radius: 12px !important; padding: 12px !important; }
+        .board-wrapper { display: flex; justify-content: center; align-items: center; padding: 10px; }
+        .board {
+            display: grid; grid-template-columns: repeat(15, var(--cell-size)); grid-template-rows: repeat(15, var(--cell-size));
+            background-color: #fff; border: min(2vw, 12px) solid var(--board-border); border-radius: 12px; position: relative; box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+        }
+        .cell { width: var(--cell-size); height: var(--cell-size); border: 0.5px solid #dfe4ea; box-sizing: border-box; display: flex; align-items: center; justify-content: center; position: relative; }
+        .base { padding: 12%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15%; z-index: 1; }
+        .base-inner { background: white; border-radius: 50%; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; position: relative; }
+        .red-base { grid-area: 1 / 1 / 7 / 7; background-color: var(--red); border-radius: 4px 0 0 0; }
+        .green-base { grid-area: 1 / 10 / 7 / 16; background-color: var(--green); border-radius: 0 4px 0 0; }
+        .blue-base { grid-area: 10 / 1 / 16 / 7; background-color: var(--blue); border-radius: 0 0 0 4px; }
+        .yellow-base { grid-area: 10 / 10 / 16 / 16; background-color: var(--yellow); border-radius: 0 0 4px 0; }
+        .cell.red { background-color: var(--red); } .cell.green { background-color: var(--green); } .cell.blue { background-color: var(--blue); } .cell.yellow { background-color: var(--yellow); }
+        .cell.safe::after { content: '★'; font-size: calc(var(--cell-size) * 0.7); color: rgba(0,0,0,0.15); }
+        .finish { grid-area: 7 / 7 / 10 / 10; position: relative; background: #fff; z-index: 2; }
+        .tri { position: absolute; width: 0; height: 0; border-style: solid; }
+        .tri-red { top: 0; left: 0; border-width: calc(var(--cell-size) * 1.5) calc(var(--cell-size) * 1.5) 0 0; border-color: var(--red) transparent transparent transparent; }
+        .tri-green { top: 0; right: 0; border-width: 0 calc(var(--cell-size) * 1.5) calc(var(--cell-size) * 1.5) 0; border-color: transparent var(--green) transparent transparent; }
+        .tri-yellow { bottom: 0; right: 0; border-width: 0 0 calc(var(--cell-size) * 1.5) calc(var(--cell-size) * 1.5); border-color: transparent transparent var(--yellow) transparent; }
+        .tri-blue { bottom: 0; left: 0; border-width: calc(var(--cell-size) * 1.5) 0 0 calc(var(--cell-size) * 1.5); border-color: transparent transparent transparent var(--blue); }
+        .finish-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 35%; height: 35%; background: white; border-radius: 50%; z-index: 5; box-shadow: 0 0 10px rgba(0,0,0,0.2); border: 2px solid gold; }
+        .token {
+            width: 80%; height: 80%; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 -2px 0 rgba(0,0,0,0.2);
+            cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: absolute; z-index: 100;
+        }
+        .token.active { animation: pulse-active 0.8s infinite alternate; z-index: 110; }
+        @keyframes pulse-active { from { transform: scale(1); box-shadow: 0 0 5px white; } to { transform: scale(1.2); box-shadow: 0 0 15px white; } }
+        .token-red { background: radial-gradient(circle at 30% 30%, #ff6b6b, var(--red)); }
+        .token-green { background: radial-gradient(circle at 30% 30%, #51cf66, var(--green)); }
+        .token-blue { background: radial-gradient(circle at 30% 30%, #339af0, var(--blue)); }
+        .token-yellow { background: radial-gradient(circle at 30% 30%, #fcc419, var(--yellow)); }
+        .game-controls { background: var(--panel-bg); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        .player-turn { padding: 10px; border-radius: 12px; font-size: 1.1rem; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); color: white; }
+        .dice-box { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px; margin: 15px 0; display: inline-block; }
+        .dice { width: 70px; height: 70px; background: white; border-radius: 12px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 8px; gap: 4px; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin: auto; }
+        .dice.rolling { animation: d-roll 0.4s infinite linear; }
+        @keyframes d-roll { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+        .dot { background: #2d3436; border-radius: 50%; display: none; }
+        .dice[data-value="1"] .dot:nth-child(5) { display: block; background: var(--red); }
+        .dice[data-value="2"] .dot:nth-child(1), .dice[data-value="2"] .dot:nth-child(9) { display: block; }
+        .dice[data-value="3"] .dot:nth-child(1), .dice[data-value="3"] .dot:nth-child(5), .dice[data-value="3"] .dot:nth-child(9) { display: block; }
+        .dice[data-value="4"] .dot:nth-child(1), .dice[data-value="4"] .dot:nth-child(3), .dice[data-value="4"] .dot:nth-child(7), .dice[data-value="4"] .dot:nth-child(9) { display: block; }
+        .dice[data-value="5"] .dot:nth-child(1), .dice[data-value="5"] .dot:nth-child(3), .dice[data-value="5"] .dot:nth-child(5), .dice[data-value="5"] .dot:nth-child(7), .dice[data-value="5"] .dot:nth-child(9) { display: block; }
+        .dice[data-value="6"] .dot:nth-child(1), .dice[data-value="6"] .dot:nth-child(3), .dice[data-value="6"] .dot:nth-child(4), .dice[data-value="6"] .dot:nth-child(6), .dice[data-value="6"] .dot:nth-child(7), .dice[data-value="6"] .dot:nth-child(9) { display: block; }
+        .slot-circle { width: 35px; height: 35px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.1); opacity: 0.2; transition: all 0.3s; margin: 0 5px; }
+        .slot-circle.occupied { opacity: 1; border-color: white; box-shadow: 0 0 10px currentColor; }
+        .player-item { display: flex; align-items: center; gap: 10px; padding: 8px 15px; border-radius: 10px; margin-bottom: 5px; color: white; }
+        .video-container { width: 45px; height: 45px; border-radius: 50%; overflow: hidden; background: #000; border: 2px solid rgba(255,255,255,0.2); position: relative; }
+        .video-container video { width: 100%; height: 100%; object-fit: cover; }
+        .player-info { flex-grow: 1; display: flex; justify-content: space-between; font-size: 0.85rem; }
+        @media (max-width: 991px) { :root { --cell-size: min(6.3vw, 45px); } .game-row { flex-direction: column; } .controls-column { width: 100%; margin-top: 20px; max-width: 450px; } .navbar-brand { font-size: 1.2rem; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="../index.html">Prinz Sherman</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    <li class="nav-item"><span id="online-count" class="badge bg-success rounded-pill px-3">0 Online</span></li>
+                    <li class="nav-item"><a class="nav-link" href="../index.html">Portfolio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../community.html">Community</a></li>
+                    <li class="nav-item"><a class="nav-link" href="little-lemon.html">Restaurant</a></li>
+                    <li class="nav-item"><a class="nav-link" href="snake.html">Snake Game</a></li>
+                    <li class="nav-item"><a class="nav-link" href="checkers.html">Checkers</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="ludo.html">Ludo</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="main-container">
+        <div class="container">
+            <div id="lobby" class="lobby-container text-center">
+                <h3 class="mb-4 text-warning">MULTIPLAYER</h3>
+                <div id="setup-area">
+                    <input type="text" id="playerNameInput" class="form-control input-custom mb-3 text-center" placeholder="Enter Your Name">
+                    <button class="btn btn-danger w-100 py-3 mb-3 rounded-3 shadow" onclick="window.createRoom()">HOST UNIVERSE</button>
+                    <button class="btn btn-info w-100 py-3 mb-4 rounded-3 shadow text-white fw-bold" onclick="window.startAIGame()">PLAY WITH ALEXA</button>
+                    <div class="d-flex align-items-center mb-4"><hr class="flex-grow-1 opacity-25"> <span class="px-3 text-white-50 small">OR JOIN</span> <hr class="flex-grow-1 opacity-25"></div>
+                    <div class="input-group">
+                        <input type="text" id="roomInput" class="form-control input-custom text-center" placeholder="Room Code">
+                        <button class="btn btn-primary px-4" onclick="window.joinRoom()">JOIN</button>
+                    </div>
+                </div>
+                <div id="wait-area" class="d-none">
+                    <div class="spinner-border text-danger mb-3" role="status"></div>
+                    <h5 class="text-white-50">CODE: <span id="roomDisplay" class="text-warning fw-bold h3 ms-2">----</span></h5>
+                    <div class="d-flex justify-content-center my-4">
+                        <div class="slot-circle bg-red" id="slot-red"></div>
+                        <div class="slot-circle bg-green" id="slot-green"></div>
+                        <div class="slot-circle bg-yellow" id="slot-yellow"></div>
+                        <div class="slot-circle bg-blue" id="slot-blue"></div>
+                    </div>
+                    <div class="d-flex justify-content-center gap-2 mb-4">
+                        <button class="btn btn-success btn-sm rounded-pill px-3" onclick="shareInvite()"><i class="fab fa-whatsapp"></i> Invite</button>
+                        <button class="btn btn-outline-light btn-sm rounded-pill px-4" onclick="window.leaveRoom()">LEAVE</button>
+                    </div>
+                </div>
+            </div>
+            <div id="game-area" class="row game-row justify-content-center d-none">
+                <div class="col-auto board-wrapper"><div class="board" id="board"></div></div>
+                <div class="col-lg-3 controls-column">
+                    <div class="game-controls">
+                        <div id="turnIndicator" class="player-turn bg-red">Red's Turn</div>
+                        <div class="dice-box">
+                            <div id="dice" class="dice" data-value="1">
+                                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                            </div>
+                            <div id="diceValue" class="mt-2 text-warning fw-bold h4">?</div>
+                        </div>
+                        <div class="mb-3">
+                            <button class="btn btn-sm btn-outline-warning rounded-pill px-3" onclick="window.getAITip()">
+                                <i class="fas fa-lightbulb me-1"></i> Get AI Strategy
+                            </button>
+                        </div>
+                        <div class="alert alert-dark bg-opacity-25 border-0 py-2 small mb-3 text-white" id="status">Ready!</div>
+                        <div id="playersList" class="text-start mb-3"></div>
+                        <div class="d-flex gap-2 mb-3">
+                            <button id="toggleVideo" class="btn btn-outline-info btn-sm flex-grow-1 rounded-pill" onclick="window.startVideo()"><i class="fas fa-video"></i> Video On</button>
+                            <button id="toggleAudio" class="btn btn-outline-info btn-sm flex-grow-1 rounded-pill" onclick="window.toggleMic()" disabled><i class="fas fa-microphone"></i></button>
+                        </div>
+                        <button class="btn btn-danger btn-sm w-100 rounded-pill" onclick="window.leaveRoom()">QUIT GAME</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistant UI -->
+    <div id="ai-assistant-btn" onclick="toggleChat()">
+        <i class="fas fa-robot"></i>
+    </div>
+
+    <div id="ai-chat-window">
+        <div class="chat-header" style="height: 150px; position: relative; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); overflow: hidden;">
+            <!-- Cartoon AI Avatar -->
+            <img id="ai-avatar" src="/assets/images/alexa-robot.png" 
+                 style="width: 120px; height: 120px; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); object-fit: contain; z-index: 5;">
+            <div style="position: relative; z-index: 10; margin-top: 10px; margin-left: 15px;">
+                <h6 class="mb-0 fw-bold text-white" style="text-shadow: 0 2px 10px rgba(0,0,0,0.8);">Alexa (AI Assistant)</h6>
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-success" style="text-shadow: 0 1px 5px rgba(0,0,0,0.5);">● Online</small>
+                    <select id="chat-lang" class="bg-dark border-0 text-white-50 small rounded-pill px-2" style="outline:none; cursor:pointer; font-size: 0.75rem;" onchange="updateChatLanguage()">
+                        <option value="en">English</option>
+                        <option value="fr">French</option>
+                        <option value="es">Spanish</option>
+                        <option value="ar">Arabic</option>
+                        <option value="zh">Chinese</option>
+                        <option value="de">German</option>
+                        <option value="it">Italian</option>
+                        <option value="ja">Japanese</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="ru">Russian</option>
+                        <option value="hi">Hindi</option>
+                        <option value="ro">Romanian</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-sm text-white ms-auto" style="position: absolute; top: 10px; right: 10px; z-index: 11; background: rgba(0,0,0,0.3); border-radius: 50%;" onclick="toggleChat()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="message ai-msg">Hi! I'm your AI assistant. How can I help you?</div>
+        </div>
+        <div class="chat-footer">
+            <button class="btn btn-outline-primary btn-circle" onclick="startVoiceRecognition()" id="mic-btn"><i class="fas fa-microphone"></i></button>
+            <input type="text" class="chat-input" id="chat-input" placeholder="Ask me something..." onkeypress="handleChatKey(event)">
+            <button class="btn btn-primary btn-circle" onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="../assets/js/presence.js"></script>
+    <script src="/assets/js/aws-ai.js"></script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set, remove, get, update, onChildAdded, push } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyC7lbpbRN86mWeQ6Wwj1d8saGtY9IU6yTk", authDomain: "prinz-08ee97cc.firebaseapp.com", databaseURL: "https://prinz-08ee97cc-default-rtdb.firebaseio.com", projectId: "prinz-08ee97cc", storageBucket: "prinz-08ee97cc.firebasestorage.app", messagingSenderId: "431949566856", appId: "1:431949566856:web:47f131b012c3055c6ae03d" };
+        const app = initializeApp(firebaseConfig); 
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        // Global Auth Check
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                alert("Please sign in on the home page first!");
+                window.location.href = "../community.html";
+            } else {
+                const snap = await get(ref(db, `users/${user.uid}`));
+                if (snap.exists()) {
+                    document.getElementById('playerNameInput').value = snap.val().name;
+                } else {
+                    document.getElementById('playerNameInput').value = user.displayName || user.phoneNumber || "Guest";
+                }
+            }
+        });
+
+        window.getAITip = async function() {
+            if (!gameState) return;
+            const btn = document.querySelector('[onclick="window.getAITip()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Strategizing...';
+            btn.disabled = true;
+
+            try {
+                const situation = `Current turn: ${gameState.turn}. My color: ${myColor}. Dice value: ${gameState.diceValue}. Tokens: ${JSON.stringify(gameState.tokens[myColor])}`;
+                const prompt = `You are a pro gamer. Provide a quick, 1-sentence strategic tip for the game "Ludo". Current situation: ${situation}`;
+                const tip = await window.runAITask(prompt, "You are a pro Ludo player.");
+                alert("Pro Tip: " + tip);
+            } catch (err) {
+                alert("Error: " + err.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+        const COLORS = ['blue', 'green', 'red', 'yellow']; 
+        const playersConfig = { red: { start: 1, end: 51, homeStart: 52 }, green: { start: 14, end: 12, homeStart: 57 }, yellow: { start: 27, end: 25, homeStart: 67 }, blue: { start: 40, end: 38, homeStart: 62 } };
+        const pathCoords = []; for(let i=0; i<6; i++) pathCoords.push([6, i]); for(let i=5; i>=0; i--) pathCoords.push([i, 6]); pathCoords.push([0, 7]); for(let i=0; i<6; i++) pathCoords.push([i, 8]); for(let i=9; i<15; i++) pathCoords.push([6, i]); pathCoords.push([7, 14]); for(let i=14; i>=9; i--) pathCoords.push([8, i]); for(let i=9; i<15; i++) pathCoords.push([i, 8]); pathCoords.push([14, 7]); for(let i=14; i>=9; i--) pathCoords.push([i, 6]); for(let i=5; i>=0; i--) pathCoords.push([8, i]); pathCoords.push([7, 0]);
+        const homePaths = { red: [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5]], green: [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7]], yellow: [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9]], blue: [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7]] };
+        const basePositions = { red: [[1,1], [1,4], [4,1], [4,4]], green: [[1,10], [1,13], [4,10], [4,13]], blue: [[10,1], [10,4], [13,1], [13,4]], yellow: [[10,10], [10,13], [13,10], [13,13]] };
+        const safeSquares = [1, 9, 14, 22, 27, 35, 40, 48];
+        let roomCode = localStorage.getItem('ludoRoom'), myColor = localStorage.getItem('ludoColor'), gameState = null, localStream = null, peerConnections = {}, lastSpokenMove = -1;
+                        // Optimized STUN/TURN for faster global discovery
+                        const rtcConfig = { 
+                            iceServers: [
+                                { urls: 'stun:stun.l.google.com:19302' },
+                                { urls: 'stun:stun1.l.google.com:19302' },
+                                { urls: 'stun:stun2.l.google.com:19302' },
+                                {
+                                    urls: 'turn:global.turn.twilio.com:3478?transport=udp',
+                                    username: 'dc2d2894d5a9023620c467b0e71cfa6a35457e6679785ed6ae9856fe5bdfa269',
+                                    credential: 'tE2DajzSJwnsSbc123'
+                                },
+                                { 
+                                    urls: [
+                                        'turn:openrelay.metered.ca:80',
+                                        'turn:openrelay.metered.ca:443',
+                                        'turn:openrelay.metered.ca:443?transport=tcp'
+                                    ],
+                                    username: 'openrelayproject',
+                                    credential: 'openrelayproject'
+                                },
+                                {
+                                    urls: 'turn:relay.metered.ca:80',
+                                    username: 'openrelayproject',
+                                    credential: 'openrelayproject'
+                                }
+                            ],
+                            iceCandidatePoolSize: 2,
+                            iceTransportPolicy: 'all',
+                            bundlePolicy: 'balanced'
+                        };                let iceQueues = {}; // Queue for candidates per target
+        
+                window.startVideo = async function() {
+                    try {
+                        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                        const myVid = document.getElementById(`video-${myColor}`);
+                        if (myVid) {
+                            myVid.srcObject = localStream;
+                            myVid.play().catch(e => console.warn("Local play prevented", e));
+                        }
+                        document.getElementById('toggleVideo').innerText = "Video On";
+                        document.getElementById('toggleVideo').classList.replace('btn-outline-info', 'btn-info');
+                        document.getElementById('toggleAudio').disabled = false;
+                        setupSignaling();
+                    } catch (e) { alert("Camera access required for video chat."); }
+                };
+        
+                window.toggleMic = function() {
+                    const track = localStream.getAudioTracks()[0]; track.enabled = !track.enabled;
+                    document.getElementById('toggleAudio').innerHTML = `<i class="fas fa-microphone${track.enabled ? '' : '-slash'}"></i>`;
+                };
+        
+                function setupSignaling() {
+                    onChildAdded(ref(db, `ludo/${roomCode}/signals/${myColor}`), async (snap) => {
+                        const fromColor = snap.key; const data = snap.val();
+                        if (data.offer) await handleOffer(fromColor, data.offer);
+                    });
+                    COLORS.forEach(c => {
+                        if (gameState.players[c] && c !== myColor) {
+                            if (myColor < c) initiateCall(c);
+                        }
+                    });
+                }
+        
+                async function initiateCall(target) {
+                    const pc = createPC(target);
+                    const offer = await pc.createOffer({
+                        offerToReceiveAudio: true,
+                        offerToReceiveVideo: true
+                    });
+                    await pc.setLocalDescription(offer);
+                    
+                    // Send full offer object
+                    await set(ref(db, `ludo/${roomCode}/signals/${target}/${myColor}/offer`), {
+                        type: offer.type,
+                        sdp: offer.sdp
+                    });
+                    
+                    onValue(ref(db, `ludo/${roomCode}/signals/${myColor}/${target}/answer`), async snap => {
+                        if (snap.exists() && !pc.remoteDescription) {
+                            const answer = snap.val();
+                            await pc.setRemoteDescription(new RTCSessionDescription(answer));
+                            processIceQueue(target);
+                        }
+                    });
+                }
+        
+                function createPC(target) {
+                    const pc = new RTCPeerConnection(rtcConfig); 
+                    peerConnections[target] = pc;
+                    iceQueues[target] = [];
+        
+                    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+                    
+                    pc.onicecandidate = e => { 
+                        if (e.candidate) {
+                            const type = e.candidate.candidate.split(' ')[7];
+                            console.log(`[ICE] Local ${type} found`);
+                            push(ref(db, `ludo/${roomCode}/signals/${target}/${myColor}/candidates`), e.candidate.toJSON()); 
+                        }
+                    };
+                    
+                    pc.ontrack = e => { 
+                        const v = document.getElementById(`video-${target}`); 
+                        if (v && v.srcObject !== e.streams[0]) {
+                            v.srcObject = e.streams[0];
+                            v.play().catch(err => console.warn("Remote play prevented", err));
+                        }
+                    };
+        
+                    onChildAdded(ref(db, `ludo/${roomCode}/signals/${myColor}/${target}/candidates`), snap => {
+                        const candidate = snap.val();
+                        if (candidate && candidate.candidate) {
+                            const type = candidate.candidate.split(' ')[7];
+                            console.log(`[ICE] Remote ${type} received`);
+                        }
+                        
+                        if (pc.remoteDescription && pc.remoteDescription.type) {
+                            pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => {});
+                        } else {
+                            iceQueues[target].push(candidate);
+                        }
+                    });
+        
+                    return pc;
+                }
+        
+                async function handleOffer(from, offerData) {
+                    const pc = createPC(from);
+                    await pc.setRemoteDescription(new RTCSessionDescription(offerData));
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    
+                    // Send full answer object
+                    await set(ref(db, `ludo/${roomCode}/signals/${from}/${myColor}/answer`), {
+                        type: answer.type,
+                        sdp: answer.sdp
+                    });
+                    processIceQueue(from);
+                }
+        
+                function processIceQueue(target) {
+                    const pc = peerConnections[target];
+                    const queue = iceQueues[target];
+                    if (pc && queue) {
+                        while (queue.length > 0) {
+                            const candidate = queue.shift();
+                            pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => {});
+                        }
+                    }
+                }
+        window.createRoom = async function() {
+            const name = document.getElementById('playerNameInput').value.trim() || "Host", code = Math.floor(1000 + Math.random() * 9000).toString();
+            await set(ref(db, 'ludo/' + code), { turn: 'red', diceValue: 0, canRoll: true, gameOver: false, players: { red: { name } }, tokens: { red: [-1,-1,-1,-1], green: [-1,-1,-1,-1], yellow: [-1,-1,-1,-1], blue: [-1,-1,-1,-1] }, status: "Waiting..." });
+            roomCode = code; myColor = 'red'; localStorage.setItem('ludoRoom', code); localStorage.setItem('ludoColor', 'red'); listenToRoom();
+        };
+
+        window.joinRoom = async function() {
+            const name = document.getElementById('playerNameInput').value.trim() || "Guest", code = document.getElementById('roomInput').value.trim();
+            const snap = await get(ref(db, 'ludo/' + code)); if (!snap.exists()) return alert("Room not found!");
+            const data = snap.val(), active = Object.keys(data.players);
+            let color = (active.length === 1) ? { red: 'yellow', yellow: 'red', green: 'blue', blue: 'green' }[active[0]] : ['blue', 'green', 'red', 'yellow'].find(c => !data.players[c]);
+            if (!color) return alert("Room full!");
+            await update(ref(db, `ludo/${code}/players/${color}`), { name });
+            roomCode = code; myColor = color; localStorage.setItem('ludoRoom', code); localStorage.setItem('ludoColor', color); listenToRoom();
+        };
+
+        window.shareInvite = () => { const t = `Play Ludo with me! 🎲 Code: ${roomCode}`; window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, '_blank'); };
+        window.leaveRoom = () => { if (roomCode && myColor) remove(ref(db, `ludo/${roomCode}/players/${myColor}`)); localStorage.clear(); location.reload(); };
+        
+        window.startAIGame = async function() {
+            const name = document.getElementById('playerNameInput').value.trim() || "Host", code = "AI_" + Math.floor(1000 + Math.random() * 9000);
+            await set(ref(db, 'ludo/' + code), { 
+                turn: 'red', 
+                diceValue: 0, 
+                canRoll: true, 
+                gameOver: false, 
+                isAIGame: true,
+                moveCount: 0, // Initialize moveCount
+                players: { 
+                    red: { name }, 
+                    yellow: { name: "Alexa AI" } 
+                }, 
+                tokens: { red: [-1,-1,-1,-1], green: [-1,-1,-1,-1], yellow: [-1,-1,-1,-1], blue: [-1,-1,-1,-1] }, 
+                status: "Game Started" 
+            });
+            roomCode = code; myColor = 'red'; localStorage.setItem('ludoRoom', code); localStorage.setItem('ludoColor', 'red'); listenToRoom();
+        };
+
+        function checkAIMove() {
+            if (gameState && gameState.isAIGame && gameState.turn !== myColor && !gameState.gameOver) {
+                
+                // REDUCED FREQUENCY: Tactical briefing every 10 moves
+                if (gameState.moveCount > 0 && gameState.moveCount % 10 === 0 && gameState.canRoll && lastSpokenMove !== gameState.moveCount && typeof window.performTacticalAnalysis === 'function') {
+                    lastSpokenMove = gameState.moveCount;
+                    const aiProgress = gameState.tokens['yellow'].reduce((a, b) => a + (b === 99 ? 60 : (b === -1 ? 0 : b)), 0);
+                    const userProgress = gameState.tokens['red'].reduce((a, b) => a + (b === 99 ? 60 : (b === -1 ? 0 : b)), 0);
+                    const stats = `Alexa Progress: ${aiProgress} points. Prinz Progress: ${userProgress} points. Tokens home: Alexa (${gameState.tokens['yellow'].filter(t=>t===99).length}), Prinz (${gameState.tokens['red'].filter(t=>t===99).length}).`;
+                    window.performTacticalAnalysis("Ludo", stats);
+                }
+
+                if (gameState.canRoll) {
+                    setTimeout(rollDice, 1500);
+                } else if (gameState.diceValue > 0) {
+                    setTimeout(() => {
+                        const aiColor = gameState.turn;
+                        const tokens = gameState.tokens[aiColor];
+                        const possibleIndices = tokens.map((_, i) => i).filter(i => canMoveInternalIndex(aiColor, i, gameState.diceValue));
+                        
+                        if (possibleIndices.length > 0) {
+                            // MASTER AI LOGIC: Score every possible move
+                            let bestIdx = possibleIndices[0];
+                            let highestScore = -Infinity;
+
+                            possibleIndices.forEach(idx => {
+                                let score = 0;
+                                const currentPos = tokens[idx];
+                                const nextPos = calculateNextPos(aiColor, currentPos, gameState.diceValue);
+
+                                // 1. KILLER INSTINCT: If I can capture Prinz, DO IT!
+                                if (nextPos < 52 && !safeSquares.includes(nextPos)) {
+                                    COLORS.forEach(c => {
+                                        if (c !== aiColor) {
+                                            if (gameState.tokens[c].includes(nextPos)) score += 1000;
+                                        }
+                                    });
+                                }
+
+                                // 2. FINISH LINE: Get tokens home!
+                                if (nextPos === 99) score += 800;
+
+                                // 3. ENTER THE BOARD: Get out of base!
+                                if (currentPos === -1) score += 600;
+
+                                // 4. SAFE CAMPING: Prioritize landing on a star
+                                if (safeSquares.includes(nextPos)) score += 400;
+
+                                // 5. HOME STRETCH: Get into the final color path
+                                if (nextPos >= playersConfig[aiColor].homeStart) score += 300;
+
+                                // 6. ESCAPE DANGER: If Prinz is right behind me, MOVE!
+                                if (currentPos < 52) {
+                                    const dangerZone = [(currentPos-1+52)%52, (currentPos-2+52)%52, (currentPos-3+52)%52];
+                                    if (gameState.tokens[myColor].some(p => dangerZone.includes(p))) score += 200;
+                                }
+
+                                // 7. Progress points
+                                score += (nextPos === 99 ? 100 : nextPos) * 0.5;
+
+                                if (score > highestScore) {
+                                    highestScore = score;
+                                    bestIdx = idx;
+                                }
+                            });
+
+                            // REDUCED FREQUENCY: Commentary only every 5 moves
+                            if (gameState.moveCount % 5 === 0 && lastSpokenMove !== gameState.moveCount && typeof window.getGameCommentary === 'function') {
+                                lastSpokenMove = gameState.moveCount;
+                                let event = "is about to lose a token to me";
+                                if (tokens[bestIdx] === -1) event = "is watching me enter the board with a 6";
+                                
+                                // Calculate status (crude progress check)
+                                const aiProgress = gameState.tokens[aiColor].reduce((a, b) => a + (b === 99 ? 60 : (b === -1 ? 0 : b)), 0);
+                                const userProgress = gameState.tokens[myColor].reduce((a, b) => a + (b === 99 ? 60 : (b === -1 ? 0 : b)), 0);
+                                const status = aiProgress > userProgress ? 'winning' : (aiProgress < userProgress ? 'losing' : 'neutral');
+                                
+                                window.getGameCommentary("Ludo", event, status);
+                            }
+
+                            moveAI(aiColor, bestIdx);
+                        }
+                    }, 1000);
+                }
+            }
+        }
+
+        function calculateNextPos(color, pos, d) {
+            if (pos === -1) return playersConfig[color].start;
+            let next = pos;
+            for (let i=0; i<d; i++) { 
+                if (next===playersConfig[color].end) next = playersConfig[color].homeStart; 
+                else if (next>=playersConfig[color].homeStart) next++; 
+                else next = (next+1)%52; 
+            }
+            if (next > playersConfig[color].homeStart + 5) return -2; // Invalid move
+            if (next === playersConfig[color].homeStart + 5) return 99; // Finished
+            return next;
+        }
+
+        function canMoveInternalIndex(color, idx, val) { 
+            const pos = gameState.tokens[color][idx]; 
+            return pos!==99 && (pos===-1 ? val===6 : (pos<52 || pos+val <= playersConfig[color].homeStart+5)); 
+        }
+
+        async function moveAI(color, idx) {
+            let u = {}, tokens = [...gameState.tokens[color]], pos = tokens[idx], d = gameState.diceValue, extra = (d===6), status = "Alexa is moving...";
+            
+            if (pos===-1) tokens[idx] = playersConfig[color].start;
+            else {
+                for (let i=0; i<d; i++) { if (pos===playersConfig[color].end) pos = playersConfig[color].homeStart; else if (pos>=playersConfig[color].homeStart) pos++; else pos = (pos+1)%52; }
+                tokens[idx] = pos; if (pos===playersConfig[color].homeStart+5) { tokens[idx]=99; extra=true; }
+                if (pos < 52 && !safeSquares.includes(pos)) {
+                    COLORS.forEach(c => { if (c!==color) {
+                        let ot = [...gameState.tokens[c]]; let cap = false;
+                        ot.forEach((tp, ti) => { if (tp===pos) { ot[ti]=-1; cap=true; extra=true; status="Captured!"; } });
+                        if (cap) u[`tokens/${c}`] = ot;
+                    }});
+                }
+            }
+            u[`tokens/${color}`] = tokens;
+            u.moveCount = (gameState.moveCount || 0) + 1; // Increment moveCount
+            if (tokens.every(t => t===99)) { 
+                u.gameOver=true; 
+                u.status=`You Lose!`; 
+                if (typeof window.celebrateVictory === 'function') {
+                    window.celebrateVictory("Alexa AI", true);
+                }
+            }
+            else if (extra) { u.canRoll=true; u.diceValue=0; u.status=status; }
+            else { 
+                const next = color === 'red' ? 'yellow' : 'red';
+                u.turn=next; u.canRoll=true; u.diceValue=0; u.status=`${gameState.players[next].name}'s turn`; 
+            }
+            await update(ref(db, `ludo/${roomCode}`), u);
+        }
+
+        function listenToRoom() { onValue(ref(db, 'ludo/' + roomCode), snap => { if (snap.exists()) { gameState = snap.val(); renderGame(); checkAIMove(); } }); }
+
+        function renderGame() {
+            const isStarted = Object.keys(gameState.players).length >= 2;
+            if (!isStarted) {
+                document.getElementById('lobby').classList.remove('d-none'); document.getElementById('setup-area').classList.add('d-none'); document.getElementById('wait-area').classList.remove('d-none');
+                document.getElementById('roomDisplay').innerText = roomCode; COLORS.forEach(c => document.getElementById(`slot-${c}`).classList.toggle('occupied', !!gameState.players[c])); return;
+            }
+            document.getElementById('lobby').classList.add('d-none'); document.getElementById('game-area').classList.remove('d-none');
+            const list = document.getElementById('playersList');
+            if (list.querySelectorAll('.player-item').length !== Object.keys(gameState.players).length) {
+                list.innerHTML = '';
+                COLORS.forEach(c => { if (gameState.players[c]) {
+                    const item = document.createElement('div');
+                    item.className = `player-item bg-${c} p-2 rounded-3 mb-2`;
+                    item.innerHTML = `<div class="video-container"><video id="video-${c}" autoplay playsinline ${c === myColor ? 'muted' : ''}></video></div>
+                        <div class="player-info ms-2"><b>${gameState.players[c].name}</b> <small>${c === myColor ? '(YOU)' : ''}</small></div>`;
+                    list.appendChild(item);
+                }});
+                if (localStream) document.getElementById(`video-${myColor}`).srcObject = localStream;
+            }
+            document.getElementById('turnIndicator').innerText = `${gameState.players[gameState.turn].name}'s Turn`;
+            document.getElementById('turnIndicator').className = `player-turn bg-${gameState.turn}`;
+            document.getElementById('status').innerText = gameState.status;
+            document.getElementById('diceValue').innerText = gameState.diceValue || "?";
+            document.getElementById('dice').setAttribute('data-value', gameState.diceValue || 1);
+            createBoard();
+        }
+
+        function createBoard() {
+            const b = document.getElementById('board'); b.innerHTML = '';
+            COLORS.forEach(c => {
+                const base = document.createElement('div'); base.className = `base ${c}-base`; base.id = `base-${c}`;
+                base.innerHTML = '<div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div><div class="base-inner"></div>'; b.appendChild(base);
+            });
+            const f = document.createElement('div'); f.className = 'finish'; f.innerHTML = '<div class="tri tri-red"></div><div class="tri tri-green"></div><div class="tri tri-yellow"></div><div class="tri tri-blue"></div><div class="finish-center"></div>'; b.appendChild(f);
+            for (let r=0; r<15; r++) for (let c=0; c<15; c++) {
+                if ((r<6 && c<6) || (r<6 && c>8) || (r>8 && c<6) || (r>8 && c>8) || (r>=6 && r<=8 && c>=6 && c <= 8)) continue;
+                const cell = document.createElement('div'); cell.className = 'cell'; cell.id = `cell-${r}-${c}`; cell.style.gridArea = `${r+1} / ${c+1}`;
+                COLORS.forEach(color => {
+                    if (homePaths[color].some(h => h[0]===r && h[1]===c)) cell.classList.add(color);
+                    const start = pathCoords[playersConfig[color].start]; if (start[0]===r && start[1]===c) cell.classList.add(color, 'safe');
+                });
+                pathCoords.forEach((p, idx) => { if (safeSquares.includes(idx) && p[0]===r && p[1]===c) cell.classList.add('safe'); }); b.appendChild(cell);
+            }
+            renderTokens();
+        }
+
+        function renderTokens() {
+            document.querySelectorAll('.token').forEach(t => t.remove()); const posMap = {};
+            COLORS.forEach(color => {
+                if (!gameState.players[color]) return;
+                gameState.tokens[color].forEach((pos, idx) => {
+                    if (pos === 99) return;
+                    let container = (pos===-1) ? document.querySelector(`#base-${color} .base-inner:nth-child(${idx+1})`) : document.getElementById(`cell-${pathCoords[pos]?.[0] ?? homePaths[color][pos - playersConfig[color].homeStart][0]}-${pathCoords[pos]?.[1] ?? homePaths[color][pos - playersConfig[color].homeStart][1]}`);
+                    if (container) {
+                        const token = document.createElement('div'); token.className = `token token-${color}`;
+                        const key = pos===-1 ? `b-${color}-${idx}` : `c-${pos}`; if (!posMap[key]) posMap[key] = 0;
+                        const offset = posMap[key] * 4; posMap[key]++; token.style.transform = `translate(${offset}px, ${offset}px)`;
+                        if (gameState.turn===myColor && color===myColor && !gameState.canRoll && canMoveInternal(idx, gameState.diceValue)) {
+                            token.classList.add('active'); token.onclick = e => { e.stopPropagation(); move(idx); };
+                        }
+                        container.appendChild(token);
+                    }
+                });
+            });
+        }
+
+        function canMoveInternal(idx, val) { const pos = gameState.tokens[myColor][idx]; return pos!==99 && (pos===-1 ? val===6 : (pos<52 || pos+val <= playersConfig[myColor].homeStart+5)); }
+
+        async function rollDice() {
+            // Allow dice roll if it's my turn OR if it's an AI game and it's Alexa's turn
+            const isAITurn = gameState.isAIGame && gameState.turn !== myColor;
+            if ((gameState.turn !== myColor && !isAITurn) || !gameState.canRoll || gameState.gameOver) return;
+            
+            const d = document.getElementById('dice'); d.classList.add('rolling');
+            setTimeout(async () => {
+                const val = Math.floor(Math.random()*6)+1; d.classList.remove('rolling');
+                if (!gameState.tokens[gameState.turn].some((_, i) => canMoveInternalIndex(gameState.turn, i, val))) {
+                    await update(ref(db, `ludo/${roomCode}`), { diceValue: val, canRoll: false, status: "No moves!" }); setTimeout(nextTurn, 1000);
+                } else await update(ref(db, `ludo/${roomCode}`), { diceValue: val, canRoll: false, status: "Move!" });
+            }, 600);
+        }
+
+        async function move(idx) {
+            if (gameState.turn!==myColor || gameState.canRoll) return;
+            let u = {}, tokens = [...gameState.tokens[myColor]], pos = tokens[idx], d = gameState.diceValue, extra = (d===6), status = "Moving...";
+            if (pos===-1) tokens[idx] = playersConfig[myColor].start;
+            else {
+                for (let i=0; i<d; i++) { if (pos===playersConfig[myColor].end) pos = playersConfig[myColor].homeStart; else if (pos>=playersConfig[myColor].homeStart) pos++; else pos = (pos+1)%52; }
+                tokens[idx] = pos; if (pos===playersConfig[myColor].homeStart+5) { tokens[idx]=99; extra=true; }
+                if (pos < 52 && !safeSquares.includes(pos)) {
+                    COLORS.forEach(c => { if (c!==myColor) {
+                        let ot = [...gameState.tokens[c]]; let cap = false;
+                        ot.forEach((tp, ti) => { if (tp===pos) { ot[ti]=-1; cap=true; extra=true; status="Captured!"; } });
+                        if (cap) u[`tokens/${c}`] = ot;
+                    }});
+                }
+            }
+            u[`tokens/${myColor}`] = tokens;
+            u.moveCount = (gameState.moveCount || 0) + 1; // Increment moveCount
+            if (tokens.every(t => t===99)) { 
+                u.gameOver=true; 
+                u.status=`You Win!`; 
+                if (typeof window.celebrateVictory === 'function') {
+                    window.celebrateVictory(gameState.players[myColor].name, false);
+                }
+            }
+            else if (extra) { u.canRoll=true; u.diceValue=0; u.status=status; }
+            else { const idx = COLORS.indexOf(gameState.turn); let next = (idx+1)%4; while (!gameState.players[COLORS[next]]) next = (next+1)%4; u.turn=COLORS[next]; u.canRoll=true; u.diceValue=0; u.status=`${gameState.players[COLORS[next]].name}'s turn`; }
+            await update(ref(db, `ludo/${roomCode}`), u);
+        }
+
+        async function nextTurn() { const idx = COLORS.indexOf(gameState.turn); let next = (idx+1)%4; while (!gameState.players[COLORS[next]]) next = (next+1)%4; await update(ref(db, `ludo/${roomCode}`), { turn: COLORS[next], canRoll: true, diceValue: 0, status: `${gameState.players[COLORS[next]].name}'s turn` }); }
+        document.getElementById('dice').onclick = rollDice; if (roomCode && myColor) listenToRoom();
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../sw.js')
+                    .then(reg => console.log('SW Registered!', reg))
+                    .catch(err => console.log('SW Reg Failed!', err));
+            });
+        }
+    </script>
+</body>
+</html>

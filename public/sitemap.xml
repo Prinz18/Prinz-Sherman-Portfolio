@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://prinzsherman.web.app/</loc>
+    <lastmod>2026-02-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://prinzsherman.web.app/assets/images/my-photo.jpeg</image:loc>
+      <image:title>Prinz Sherman - Web Developer</image:title>
+      <image:caption>Prinz Sherman, Professional Web Developer and Game Creator</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://prinzsherman.web.app/assets/images/prinzo.jpg</image:loc>
+      <image:title>Prinz Sherman Avatar</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://prinzsherman.web.app/community.html</loc>
+    <lastmod>2026-02-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://prinzsherman.web.app/assets/images/prinzo.jpg</image:loc>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://prinzsherman.web.app/projects/ludo.html</loc>
+    <lastmod>2026-02-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prinzsherman.web.app/projects/checkers.html</loc>
+    <lastmod>2026-02-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prinzsherman.web.app/projects/snake.html</loc>
+    <lastmod>2026-02-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prinzsherman.web.app/projects/yess.html</loc>
+    <lastmod>2026-03-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prinzsherman.web.app/projects/little-lemon.html</loc>
+    <lastmod>2026-02-21</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>
