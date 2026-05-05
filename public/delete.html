@@ -77,15 +77,15 @@
         <div class="chat-footer">
             <input type="file" id="ocr-upload" accept="image/*" style="display:none" onchange="handleOCRUpload(event)">
             <input type="file" id="doc-upload" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handleDocUpload(event)">
-            <button class="btn btn-outline-info btn-circle me-1" onclick="document.getElementById('ocr-upload').click()" title="Scan & Translate Text">
-                <i class="fas fa-camera"></i>
-            </button>
-            <button class="btn btn-outline-secondary btn-circle me-1" onclick="document.getElementById('doc-upload').click()" title="Attach Document">
-                <i class="fas fa-paperclip"></i>
-            </button>
-            <button class="btn btn-outline-primary btn-circle" onclick="startVoiceRecognition()" id="mic-btn"><i class="fas fa-microphone"></i></button>
-            <input type="text" class="chat-input" id="chat-input" placeholder="Ask me something..." onkeypress="handleChatKey(event)">
-            <button class="btn btn-primary btn-circle" onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+            <div class="position-relative w-100 d-flex align-items-center">
+                <input type="text" class="chat-input pe-5" id="chat-input" placeholder="Ask me something..." onkeypress="handleChatKey(event)" oninput="toggleChatActions()">
+                <div id="chat-actions" class="position-absolute end-0 d-flex align-items-center pe-2">
+                    <button class="chat-action-btn" onclick="document.getElementById('ocr-upload').click()" title="Scan & Translate Text"><i class="fas fa-camera"></i></button>
+                    <button class="chat-action-btn" onclick="document.getElementById('doc-upload').click()" title="Attach Document"><i class="fas fa-paperclip"></i></button>
+                    <button class="chat-action-btn" onclick="startVoiceRecognition()" id="mic-btn"><i class="fas fa-microphone"></i></button>
+                </div>
+            </div>
+            <button class="btn btn-primary btn-circle ms-2" onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 

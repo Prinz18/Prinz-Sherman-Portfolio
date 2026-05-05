@@ -29,7 +29,19 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* AI Assistant Styles */
+.chat-action-btn {
+    color: #94a3b8;
+    transition: all 0.3s ease;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    padding: 0 8px !important;
+}
+
+.chat-action-btn:hover {
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
 :root {
     --primary-color: #0d6efd;
     --mood-color: #0d6efd; /* AI reactive color */

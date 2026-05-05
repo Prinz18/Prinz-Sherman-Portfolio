@@ -226,10 +226,19 @@ window.sendChatMessage = async function() {
     if (!text) return;
     appendMessage('user', text);
     input.value = '';
+    window.toggleChatActions(); // Restore icons after sending
     const thinkingId = appendMessage('ai', '...');
     const reply = await askGroq(text);
     document.getElementById(thinkingId).innerText = reply;
     window.speakText(reply);
+};
+
+window.toggleChatActions = function() {
+    const input = document.getElementById('chat-input');
+    const actions = document.getElementById('chat-actions');
+    if (input && actions) {
+        actions.style.visibility = input.value.trim().length > 0 ? 'hidden' : 'visible';
+    }
 };
 
 window.handleChatKey = function(event) {
@@ -420,6 +429,10 @@ window.handleDocUpload = async function(event) {
 
     if (document.getElementById('ai-chat-window').style.display !== 'flex') window.toggleChat();
     appendMessage('user', `Attached: ${file.name}`);
+    
+    // Clear input to restore icons
+    document.getElementById('chat-input').value = '';
+    window.toggleChatActions();
     
     const thinkingId = appendMessage('ai', "...");
     const reply = await askGroq(`The user just attached a document named "${file.name}". Explain that you can see the file and you're learning how to read document contents soon! Make it friendly and robotic.`);
