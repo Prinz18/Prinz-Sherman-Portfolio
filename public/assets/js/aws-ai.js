@@ -414,6 +414,19 @@ window.handleOCRUpload = async function(event) {
     reader.readAsArrayBuffer(file);
 };
 
+window.handleDocUpload = async function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (document.getElementById('ai-chat-window').style.display !== 'flex') window.toggleChat();
+    appendMessage('user', `Attached: ${file.name}`);
+    
+    const thinkingId = appendMessage('ai', "...");
+    const reply = await askGroq(`The user just attached a document named "${file.name}". Explain that you can see the file and you're learning how to read document contents soon! Make it friendly and robotic.`);
+    document.getElementById(thinkingId).innerText = reply;
+    window.speakText(reply);
+};
+
 window.updateChatLanguage = function() {
     const lang = document.getElementById('chat-lang').value;
     console.log("Chat language updated to:", lang);
