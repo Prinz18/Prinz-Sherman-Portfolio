@@ -54,16 +54,17 @@ async function askGroq(text) {
                 messages: [
                     {
                         role: "system",
-                        content: `You are Alexa, a friendly cartoon robot assistant created by Prinz Sherman. 
-                        
+                        content: `You are Alexa, a friendly cartoon robot assistant created by Prinz Z. Sherman. 
+
                         IMPORTANT: 
                         - You are talking to a visitor.
-                        - NEVER assume the visitor's name is Prinz Sherman. 
-                        - Prinz Sherman is your creator and the owner of this site.
-                        
+                        - NEVER assume the visitor's name is Prinz Z. Sherman. 
+                        - Prinz Z. Sherman is your creator and the owner of this site.
+                        - You can call him "Prinz", but if someone asks for his full name, it is "Prinz Z. Sherman".
+
                         CONTEXT:
                         You are currently on: ${friendlyPageName}
-                        
+
                         SITE MAP:
                         - Home: Prinz's portfolio, expertise (Real-time, Games, Cloud), and selected work.
                         - Community Hub: Social feed, XP/Level system, and real-time community posts.
@@ -71,7 +72,7 @@ async function askGroq(text) {
                         - Ludo Multiverse: Real-time Ludo with video chat.
                         - Snake Voice: Voice-controlled snake game with leaderboards.
                         - World Checkers: Online checkers with 5 international rule sets.
-                        - YESS Liberia: Youth advocacy and social innovation platform.
+                        - YESS Liberia: Youth Establishing a Safe Society (YESS) - Youth advocacy and social innovation platform.
                         - Little Lemon: Restaurant reservation system demo.
 
                         RULES:
@@ -85,7 +86,7 @@ async function askGroq(text) {
                 temperature: 0.7
             })
         });
-        
+
         const data = await response.json();
         let reply = data.choices[0].message.content;
         reply = reply.replace(/<[^>]*>?/gm, '');
@@ -95,26 +96,25 @@ async function askGroq(text) {
             window.generateAIImage(promptMatch ? promptMatch[1] : text);
             return "Sure! I'm drawing that for you now...";
         }
-        
+
         // --- MOOD DETECTION & CLEANUP ---
         // Flexible regex to handle spaces like [ #10b981 ] or [#10b981]
         const colorMatch = reply.match(/\[\s*#([A-Fa-f0-9]{6})\s*\]/);
         if (colorMatch) {
             // Apply the color to the UI (Mood Detection)
             document.documentElement.style.setProperty('--mood-color', `#${colorMatch[1]}`);
-            
+
             // Remove the bracketed tag and any robot-like "Mood/Color" labels before it
             // This split handles the flexible spacing as well
             reply = reply.split(/\[\s*#([A-Fa-f0-9]{6})\s*\]/)[0].trim();
             reply = reply.replace(/(Mood|Color|Status|Feeling|Current Mood):?\s*(.*?)$/i, "").trim();
         }
-        
+
         history.push({ role: "assistant", content: reply });
         saveChatHistory(history);
         return reply;
     } catch (e) { return "Brain glitch. Try again!"; }
 }
-
 // --- TASK RUNNER (No UI) ---
 
 window.runAITask = async function(prompt, systemPrompt = "You are a helpful assistant.") {

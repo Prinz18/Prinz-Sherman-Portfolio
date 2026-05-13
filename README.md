@@ -1,4 +1,4 @@
-# Prinz Sherman | Software Engineer & Creative Developer
+# Prinz Z. Sherman | Software Engineer & Creative Developer
 
 Professional Web Developer and Game Creator specializing in real-time multiplayer systems, interactive experiences, and AI-integrated web applications.
 
@@ -25,7 +25,7 @@ Professional Web Developer and Game Creator specializing in real-time multiplaye
 ## 📬 Contact
 - **WhatsApp:** [+231889206110](https://wa.me/231889206110)
 - **Email:** shermanprinz14@gmail.com
-- **LinkedIn:** [Prinz Sherman](https://www.linkedin.com/in/prinz-sherman-2b9572229)
+- **LinkedIn:** [Prinz Z. Sherman](https://www.linkedin.com/in/prinz-sherman-2b9572229)
 
 ---
 *Portfolio & Interactive Project Hub*
