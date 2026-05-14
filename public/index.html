@@ -282,7 +282,7 @@
                     <li class="nav-item"><a class="nav-link px-3" href="#about">About</a></li>
                     <li class="nav-item"><a class="nav-link px-3" href="#skills">Expertise</a></li>
                     <li class="nav-item"><a class="nav-link px-3" href="#projects">Work</a></li>
-                    <li class="nav-item"><a class="btn btn-primary-modern btn-modern ms-lg-3" href="community.html">Community Hub</a></li>
+                    <li class="nav-item"><a class="btn btn-primary-modern btn-modern ms-lg-3" href="community">Community Hub</a></li>
                 </ul>
             </div>
         </div>
@@ -400,7 +400,7 @@
                     <h2 class="display-4 fw-bold">Selected Work</h2>
                     <p class="mb-0">From multiplayer arenas to business solutions.</p>
                 </div>
-                <a href="community.html" class="text-primary text-decoration-none fw-bold">Launch Community Hub <i class="fas fa-arrow-right ms-2"></i></a>
+                <a href="community" class="text-primary text-decoration-none fw-bold">Launch Community Hub <i class="fas fa-arrow-right ms-2"></i></a>
             </div>
             
             <div class="row g-4">
@@ -760,6 +760,23 @@
             }
         }
         fetchWeather();
+
+        // Clean URL Anchors (Hide # from address bar)
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    // Update URL without hash
+                    history.pushState(null, null, window.location.pathname);
+                }
+            });
+        });
 
         // Register Service Worker
         if ('serviceWorker' in navigator) {
