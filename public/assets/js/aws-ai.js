@@ -232,7 +232,15 @@ window.sendChatMessage = async function() {
     window.toggleChatActions(); // Restore icons after sending
     const thinkingId = appendMessage('ai', '...');
     const reply = await askGroq(text);
-    document.getElementById(thinkingId).innerText = reply;
+    
+    // Update the existing thinking message
+    const msgDiv = document.getElementById(thinkingId);
+    if (msgDiv) {
+        const textSpan = msgDiv.querySelector('.message-text');
+        if (textSpan) textSpan.innerText = reply;
+        else msgDiv.innerText = reply;
+    }
+    
     window.speakText(reply);
 };
 
@@ -262,7 +270,21 @@ function appendMessage(sender, text) {
     const id = 'msg-' + Date.now();
     msgDiv.id = id;
     msgDiv.className = `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
-    msgDiv.innerText = text;
+    
+    const textSpan = document.createElement('span');
+    textSpan.className = 'message-text';
+    textSpan.innerText = text;
+    msgDiv.appendChild(textSpan);
+
+    if (sender === 'ai') {
+        const repeatBtn = document.createElement('button');
+        repeatBtn.className = 'repeat-msg-btn';
+        repeatBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+        repeatBtn.title = "Repeat Audio";
+        repeatBtn.onclick = () => window.speakText(textSpan.innerText);
+        msgDiv.appendChild(repeatBtn);
+    }
+
     body.appendChild(msgDiv);
     body.scrollTop = body.scrollHeight;
     return id;
