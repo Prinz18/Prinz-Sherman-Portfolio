@@ -267,7 +267,7 @@
             <input type="file" id="ocr-upload" accept="image/*" style="display:none" onchange="handleOCRUpload(event)">
             <input type="file" id="doc-upload" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handleDocUpload(event)">
             <div class="position-relative w-100 d-flex align-items-center">
-                <input type="text" class="chat-input pe-5" id="chat-input" placeholder="Ask me something..." onkeypress="handleChatKey(event)" oninput="toggleChatActions()">
+                <textarea class="chat-input pe-5" id="chat-input" placeholder="Ask me something..." onkeypress="handleChatKey(event)" oninput="toggleChatActions()" rows="1"></textarea>
                 <div id="chat-actions" class="position-absolute end-0 d-flex align-items-center pe-2">
                     <button class="chat-action-btn" onclick="document.getElementById('ocr-upload').click()" title="Scan & Translate Text"><i class="fas fa-camera"></i></button>
                     <button class="chat-action-btn" onclick="document.getElementById('doc-upload').click()" title="Attach Document"><i class="fas fa-paperclip"></i></button>

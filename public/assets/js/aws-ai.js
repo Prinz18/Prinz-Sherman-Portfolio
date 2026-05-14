@@ -226,6 +226,9 @@ window.sendChatMessage = async function() {
     if (!text) return;
     appendMessage('user', text);
     input.value = '';
+    if (input.tagName === 'TEXTAREA') {
+        input.style.height = 'auto'; // Reset height
+    }
     window.toggleChatActions(); // Restore icons after sending
     const thinkingId = appendMessage('ai', '...');
     const reply = await askGroq(text);
@@ -239,10 +242,16 @@ window.toggleChatActions = function() {
     if (input && actions) {
         actions.style.visibility = input.value.trim().length > 0 ? 'hidden' : 'visible';
     }
+    // Adaptive Height Logic
+    if (input) {
+        input.style.height = 'auto';
+        input.style.height = (input.scrollHeight) + 'px';
+    }
 };
 
 window.handleChatKey = function(event) {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
         window.sendChatMessage();
     }
 };
