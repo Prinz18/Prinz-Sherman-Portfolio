@@ -2,6 +2,7 @@
   "hosting": {
     "public": "public",
     "site": "prinzsherman",
+    "cleanUrls": true,
     "ignore": [
       "firebase.json",
       "**/.*",

@@ -78,7 +78,7 @@
     <header class="profile-header text-center">
         <div class="container">
             <div class="position-relative d-inline-block mb-4">
-                <img id="display-profile-img" src="assets/images/prinzo.jpg" alt="User Profile Photo" class="profile-img-large shadow-lg">
+                <img id="display-profile-img" src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="User Profile Photo" class="profile-img-large shadow-lg">
                 <input type="file" id="upload-photo" class="d-none" accept="image/*">
                 <label for="upload-photo" id="edit-photo-btn" class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 d-none">
                     <i class="fas fa-camera"></i>
@@ -258,7 +258,7 @@
                 const userRef = ref(db, `users/${user.uid}`);
                 const snap = await get(userRef);
                 const defaultName = user.phoneNumber || "Guest " + user.uid.slice(0, 5);
-                const defaultPhoto = "assets/images/prinzo.jpg";
+                const defaultPhoto = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
 
                 if (!snap.exists()) {
                     await set(userRef, { 
@@ -330,7 +330,7 @@
             const postData = {
                 uid: currentUser.uid,
                 authorName: userData.name || currentUser.displayName,
-                authorImg: userData.photoURL || currentUser.photoURL,
+                authorImg: userData.photoURL || currentUser.photoURL || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
                 content: content,
                 timestamp: Date.now()
             };
